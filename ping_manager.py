@@ -50,7 +50,7 @@ ambiguous_roles = {
                     "government": ["U.S Government", "Comp. Government"],
                   }
 
-TIMEOUT_TIME = 15
+TIMEOUT_TIME = 3600
 
 # jjam912's code
 # Set up the help message
