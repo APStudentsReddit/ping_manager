@@ -16,7 +16,7 @@ valid_helper_roles = {
                         "French": ["ap french", "french", "francais", "français"],
                         "German": ["ap german", "german"],
                         "Human Geography": ["geography", "geo", "ap geo", "human geography"],
-                        "Italian": ["ap italian", "italian", "mafia"],
+                        "Italian": ["ap italian", "italian"],
                         "Japanese": ["ap japanese", "japanese"],
                         "Language Arts": ["ap language", "ap lang", "lang"],
                         "Latin": ["ap latin", "latin"],
@@ -203,7 +203,7 @@ async def on_message(message):
             common_helper_role = " ".join(message.content.split(" ")[1:len(message.content.split(" "))]).lower()
             helper_role = convertCommonNameToProperName(common_helper_role)
             if (message.author in users_on_timeout):
-                msg = await client.send_message(message.channel, message.author.mention + " Sorry, but you cannot ping a helper for " + str(users_on_timeout[message.author][0]) + " seconds.")
+                msg = await client.send_message(message.author, message.author.mention + " Sorry, but you cannot ping a helper for " + str(users_on_timeout[message.author][0]) + " seconds.")
                 messages_to_delete[msg] = 5
             else:
                 if (helper_role == "ambiguous_role"):
@@ -220,11 +220,11 @@ async def on_message(message):
                         messages_to_delete[pings_needing_confirmation[message.author][2]] = 1
                     pings_needing_confirmation[message.author] = [15, helper_role, msg]
                 else:
-                    msg = await client.send_message(message.channel, message.author.mention + " Sorry, but there is no helper role named \"" + common_helper_role + "\".")
+                    msg = await client.send_message(message.author, message.author.mention + " Sorry, but there is no helper role named \"" + common_helper_role + "\".")
                     messages_to_delete[msg] = 15
                     messages_to_delete[message] = 15
         else:
-            msg = await client.send_message(message.channel, message.author.mention + " Sorry, but you are blacklisted from pinging helpers.")
+            msg = await client.send_message(message.author, message.author.mention + " Sorry, but you are blacklisted from pinging helpers.")
             messages_to_delete[message] = 5
             messages_to_delete[msg] = 5
     # Mod Only Commands
@@ -243,7 +243,7 @@ async def on_message(message):
                     messages_to_delete[msg] = 5
                     messages_to_delete[message] = 5
         else:
-            msg = await client.send_message(message.channel, message.author.mention + " Sorry, but that command is for mods only.")
+            msg = await client.send_message(message.channel, message.author.mention + " Sorry, but that command is for members with the Manage Server permission only.")
             messages_to_delete[msg] = 5
             messages_to_delete[message] = 5
     elif message.content.startswith('!unblacklist'):
@@ -260,7 +260,7 @@ async def on_message(message):
                     blacklisted_users.remove(user_name)
                     msg = await client.send_message(message.channel, message.author.mention + " %s is no longer blacklisted from pinging helpers." % user_name)
         else:
-            msg = await client.send_message(message.channel, message.author.mention + " Sorry, but that command is for mods only.")
+            msg = await client.send_message(message.author, message.author.mention + " Sorry, but that command is for mods only.")
             messages_to_delete[msg] = 5
             messages_to_delete[message] = 5
     elif message.content.startswith("!getblacklist"):
@@ -272,7 +272,7 @@ async def on_message(message):
             await client.send_message(message.author, users_on_blacklist[0:-2])
             messages_to_delete[message] = 1
         else:
-            msg = await client.send_message(message.channel, message.author.mention + " Sorry, but that command is for mods only.")
+            msg = await client.send_message(message.author, message.author.mention + " Sorry, but that command is for mods only.")
             messages_to_delete[msg] = 5
             messages_to_delete[message] = 5
 
@@ -290,4 +290,4 @@ async def on_ready():
 
 client.run(TOKEN)
 save_object(blacklisted_users, "blacklist.pkl")
-print ("Created 'blacklist.pkl'.")
+print("Created 'blacklist.pkl'.")
