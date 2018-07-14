@@ -14,7 +14,9 @@ This was written to allow students to easily ping the AP Helpers while also prev
 * !notify remind
     * DM's after the Helper ping cooldown time is over.
 * !help
-    * DM's these commands, Helper aliases, and ping cooldown time.
+    * DM's these commands and ping cooldown time.
+* !alias
+    * DM's all aliases for the Helper roles.
 
     #### Mod commands
     To use these commands, the user must have the manage channels permission.
