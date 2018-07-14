@@ -11,13 +11,13 @@ valid_helper_roles = {
                         "Chinese": ["ap chinese", "chinese"],
                         "Comp. Government": ["comparative government", "comp gov", "comp. gov"],
                         "Computer Science Principles": ["ap computer science principles", "ap csp", "csp", "computer principles", "computer science principles"],
-                        "Computer Science": ["ap computer science a", "ap csa", "computer science a"],
+                        "Computer Science": ["ap computer science a", "ap csa", "cs a", "computer science a"],
                         "Environmental Science": ["apes", "environmental science", "ap es", "ap e.s"],
                         "European History": ["ap euro", "euro", "ap european history", "european history"],
                         "French": ["ap french", "french"],
                         "German": ["ap german", "german"],
                         "Home Economics": ["ap home economics", "ap home ec", "home ec", "home economics"],
-                        "Human Geography": ["human geo", "geography", "geo", "ap geo", "human geography"],
+                        "Human Geography": ["geography", "geo", "ap geo", "human geography"],
                         "Italian": ["ap italian", "italian"],
                         "Japanese": ["ap japanese", "japanese"],
                         "Language Arts": ["ap language", "ap lang", "lang"],
@@ -30,34 +30,47 @@ valid_helper_roles = {
                         "Physics 1": ["ap physics 1", "physics 1"],
                         "Physics 2": ["ap physics 2", "physics 2"],
                         "Physics C Mech": ["ap physics mech", "physics mech"],
-                        "Physics C E/M": ["ap physics e/m", "ap physics e&m", "physics e/m", "physics e&m"],
+                        "Physics C E/M": ["ap physics e/m", "physics e/m"],
                         "Research": ["ap research", "research"],
                         "Seminar": ["ap seminar", "seminar"],
                         "Spanish Langauge": ["ap spanish language", "spanish language", "spanish culture"],
                         "Spanish Literature": ["ap spanish literature", "spanish literature", "spanish lit"],
                         "Studio Art": ["ap studio art", "studio art"],
                         "Statistics": ["ap statistics", "ap stats", "stats", "ap statistics"],
-                        "U.S Government": ["ap gov", "u.s government", "us gov", "gov"],
+                        "U.S Government": ["ap gov", "u.s government", "us gov"],
                         "U.S History": ["apush", "united states", "us history", "u.s history", "ap u.s histroy"],
                         "World History": ["apwh", "ap world history", "world history", "world", "ap wh"]
                         }
+
+ambiguous_roles = {
+                    "computer science": ["Computer Science", "Computer Principles"],
+                    "comp sci": ["Computer Science", "Computer Principles"],
+                    "physics": ["Physics 1", "Physics 2", "Physics C Mech", "Physics C E/M"],
+                    "spanish": ["Spanish Language", "Spanish Literature"],
+                    "economics": ["Macroeconomics", "Microeconomics"],
+                    "econ": ["Macroeconomics", "Microeconomics"],
+                    "art": ["Art History", "Studio Art"],
+                    "gov": ["U.S Government", "Comp. Government"],
+                    "government": ["U.S Government", "Comp. Government"],
+                  }
 
 TIMEOUT_TIME = 15
 
 # jjam912's code
 # Set up the help message
-help = """To ping helpers, use ```!ping <helper name>```
-Be careful when using this command! It will ping all helpers of that role, and you will not be able to ping again for """ + str(TIMEOUT_TIME) + """ seconds.\n\nTo check how much longer until you can ping a helper use ```!notify time```\nTo request to receive a reminder when you can once again ping a helper use ```!notify remind```\n\nAliases for each role are as follows: ```
+help_message = """To ping helpers, use ```!ping <helper name>```
+Be careful when using this command! It will ping all helpers of that role, and you will not be able to ping again for """ + str(TIMEOUT_TIME) + """ seconds.\n\nTo check how much longer until you can ping a helper use ```!notify time```\nTo request to receive a reminder when you can once again ping a helper use ```!notify remind```\n\nIn order to ping a role, you must use one that role's aliases. To find the aliases for all the roles use : ```!alias```
 """
 
+alias_message = "Alias for helpers:```"
 for subject in valid_helper_roles.keys():
-    help += "\n* {0}: {1}\n".format(subject, ", ".join(valid_helper_roles[subject]))
+    alias_message += "* {0}: {1}\n".format(subject, ", ".join(valid_helper_roles[subject]))
 
-help += "\n```"
+alias_message += "\n```"
 
-help += "\n\n*Below are mod-only commands*:\n\nTo completely blacklist a user from pinging helpers use: ```!blacklist <user's mention>```\nTo unblacklist a user from pinging helpers use: ```!unblacklist <user's mention>```"
+help_message += "\n\n*Below are mod-only commands*:\n\nTo completely blacklist a user from pinging helpers use: ```!blacklist <user's mention>```\nTo unblacklist a user from pinging helpers use: ```!unblacklist <user's mention>```"
 
-TOKEN = ''
+TOKEN = 'NDY3MTcxNTg0MTcyNDkwNzUz.DisuOg.mf8P95PbPLoEkNbn8eo4jzqaOzg'
 
 client = discord.Client()
 
@@ -67,6 +80,8 @@ def convertCommonNameToProperName(s):
     for item in valid_helper_roles:
         if s in valid_helper_roles[item]:
             return item + " Helper"
+    if (s in ambiguous_roles):
+        return "ambiguous_role"
     return ""
 
 def save_object(obj, filename):
@@ -116,12 +131,15 @@ async def removeMessages():
 @client.event
 async def on_message(message):
     global messages_to_delete
+    global help_message
     if message.author == client.user:
         return
     if message.content.startswith("!help"):
-        await client.send_message(message.author, help)
+        await client.send_message(message.author, help_message)
         #await client.delete_message(message)
-        messages_to_delete[message] = 3
+        #messages_to_delete[message] = 3
+    elif message.content.startswith("!alias"):
+        await client.send_message(message.author, alias_message)
     elif message.content.startswith('!notify'):
         messages_to_delete[message] = 3
         arg = " ".join(message.content.split(" ")[1:len(message.content.split(" "))]).lower()
@@ -146,15 +164,25 @@ async def on_message(message):
             if (message.author in users_on_timeout):
                 msg = await client.send_message(message.channel, message.author.mention + " Sorry, but you cannot ping a helper for " + str(users_on_timeout[message.author][0]) + " seconds.")
                 messages_to_delete[msg] = 5
-            else:   
-                if (helper_role != ""):
+            else:
+                if (helper_role == "ambiguous_role"):
+                    ambiguous_role_response = "There are multiple helper roles that you could be referring to with \"" + common_helper_role + "\". Please specify by using one of the below roles.\n```\n"
+                    for role in ambiguous_roles[common_helper_role]:
+                        ambiguous_role_response += "\n* " + role + ": " + ", ".join(valid_helper_roles[role]) + "\n"
+                    ambiguous_role_response += "```"
+                    msg = await client.send_message(message.channel, message.author.mention + "\n" + ambiguous_role_response)
+                    messages_to_delete[msg] = 15  
+                    messages_to_delete[message] = 15 
+                elif (helper_role != ""):
                     role = discord.utils.get(message.server.roles, name=helper_role)
                     await client.edit_role(message.server, role, mentionable=True)
                     await client.send_message(message.channel, "Pinging " + role.mention + " for help.")
                     await client.edit_role(message.server, role, mentionable=False)
                     users_on_timeout[message.author] = [TIMEOUT_TIME, False]
                 else:
-                    await client.send_message(message.channel, message.author.mention + " Sorry, but there is no helper role \"" + common_helper_role + "\".")
+                    msg = await client.send_message(message.channel, message.author.mention + " Sorry, but there is no helper role \"" + common_helper_role + "\".")
+                    messages_to_delete[msg] = 15
+                    messages_to_delete[message] = 15
         else:
             msg = await client.send_message(message.channel, message.author.mention + " Sorry, but you are blacklisted from pinging helpers.")
             messages_to_delete[message] = 5
