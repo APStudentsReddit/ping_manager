@@ -7,7 +7,7 @@ This was written to allow students to easily ping the AP Helpers while also prev
 ## Commands
 
 * !ping |alias|
-    * Pings all helpers of a subject. Helper aliases can be found in the !help command.
+    * Pings all helpers of a subject. Helper aliases can be found in the !alias command.
     * Asks for confirmation of the pinger before pinging.
 * !notify time
     * DM's how much time is left before being able to ping a Helper.
