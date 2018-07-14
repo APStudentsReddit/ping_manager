@@ -150,7 +150,7 @@ async def updateTimer():
 
 async def removeMessages():
     """Updates sent messages that are to be deleted every second."""
-     while True:
+    while True:
         await asyncio.sleep(1)
         messages_to_remove = []
         #print (messages_to_delete)
@@ -165,7 +165,7 @@ async def removeMessages():
 
 async def checkOnPingRequests():
     """Timer for ping requests where the student must answer Y."""
-     while True:
+    while True:
         await asyncio.sleep(1)
         requests_to_remove = []
         for item in pings_needing_confirmation:
