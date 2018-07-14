@@ -5,20 +5,18 @@ import pickle
 valid_helper_roles = {  
                         "Art History": ["ap art history", "art history"],
                         "Biology": ["biology", "ap bio", "ap biology", "bio"],
-                        "Calculus": ["calculus", "ap calc", "calc ab", "calc bc", "calc"],
+                        "Calculus": ["calculus", "ap calc", "calc ab", "calc bc", "calc", "ab calc", "bc calc"],
                         "Capstone": ["capstone", "ap capstone"],
-                        "Chemistry": ["chem", "chemistry", "ap chem", "ap chemsitry"],
-                        "Chinese": ["ap chinese", "chinese"],
+                        "Chemistry": ["chem", "chemistry", "ap chem", "ap chemistry"],
+                        "Chinese": ["ap chinese", "chinese", "中文"],
                         "Comp. Government": ["comparative government", "comp gov", "comp. gov"],
                         "Computer Science Principles": ["ap computer science principles", "ap csp", "csp", "computer principles", "computer science principles"],
-                        "Computer Science": ["ap computer science a", "ap csa", "cs a", "computer science a"],
                         "Environmental Science": ["apes", "environmental science", "ap es", "ap e.s"],
                         "European History": ["ap euro", "euro", "ap european history", "european history"],
-                        "French": ["ap french", "french"],
+                        "French": ["ap french", "french", "francais", "français"],
                         "German": ["ap german", "german"],
-                        "Home Economics": ["ap home economics", "ap home ec", "home ec", "home economics"],
                         "Human Geography": ["geography", "geo", "ap geo", "human geography"],
-                        "Italian": ["ap italian", "italian"],
+                        "Italian": ["ap italian", "italian", "mafia"],
                         "Japanese": ["ap japanese", "japanese"],
                         "Language Arts": ["ap language", "ap lang", "lang"],
                         "Latin": ["ap latin", "latin"],
@@ -33,18 +31,16 @@ valid_helper_roles = {
                         "Physics C E/M": ["ap physics e/m", "physics e/m"],
                         "Research": ["ap research", "research"],
                         "Seminar": ["ap seminar", "seminar"],
-                        "Spanish Langauge": ["ap spanish language", "spanish language", "spanish culture"],
+                        "Spanish Language": ["ap spanish language", "spanish language", "spanish culture"],
                         "Spanish Literature": ["ap spanish literature", "spanish literature", "spanish lit"],
                         "Studio Art": ["ap studio art", "studio art"],
                         "Statistics": ["ap statistics", "ap stats", "stats", "ap statistics"],
                         "U.S Government": ["ap gov", "u.s government", "us gov"],
-                        "U.S History": ["apush", "united states", "us history", "u.s history", "ap u.s histroy"],
-                        "World History": ["apwh", "ap world history", "world history", "world", "ap wh"]
+                        "U.S History": ["apush", "united states", "us history", "u.s history", "ap u.s history"],
+                        "World History": ["apwh", "ap world history", "world history", "world", "ap wh", "whap"]
                         }
 
 ambiguous_roles = {
-                    "computer science": ["Computer Science", "Computer Principles"],
-                    "comp sci": ["Computer Science", "Computer Principles"],
                     "physics": ["Physics 1", "Physics 2", "Physics C Mech", "Physics C E/M"],
                     "spanish": ["Spanish Language", "Spanish Literature"],
                     "economics": ["Macroeconomics", "Microeconomics"],
@@ -59,7 +55,12 @@ TIMEOUT_TIME = 15
 # jjam912's code
 # Set up the help message
 help_message = """To ping helpers, use ```!ping <helper name>```
-Be careful when using this command! It will ping all helpers of that role, and you will not be able to ping again for """ + str(TIMEOUT_TIME) + """ seconds.\n\nTo check how much longer until you can ping a helper use ```!notify time```\nTo request to receive a reminder when you can once again ping a helper use ```!notify remind```\n\nIn order to ping a role, you must use one that role's aliases. To find the aliases for all the roles use : ```!alias```
+Be careful when using this command! It will ping all helpers of that role, and you will not be able to ping again for """ + str(TIMEOUT_TIME) + """ seconds.
+
+To check how much longer until you can ping a helper use ```!notify time```
+To request to receive a reminder when you can once again ping a helper use ```!notify remind```
+
+In order to ping a role, you must use one that role's aliases. To find the aliases for all the roles use : ```!alias```
 """
 
 alias_message = "Alias for helpers:```"
@@ -68,14 +69,23 @@ for subject in valid_helper_roles.keys():
 
 alias_message += "\n```"
 
-help_message += "\n\n*Below are mod-only commands*:\n\nTo completely blacklist a user from pinging helpers use: ```!blacklist <user's mention>```\nTo unblacklist a user from pinging helpers use: ```!unblacklist <user's mention>```"
+help_message += """
+
+*Below are mod-only commands*:
+
+To completely blacklist a user from pinging helpers use: ```!blacklist <user's mention>```
+To unblacklist a user from pinging helpers use: ```!unblacklist <user's mention>```
+To get all members who are blacklisted, use: ```!getblacklist```
+
+**NOTE:** At the request of bork, Computer Science A and Home Economics Helpers will not receive any pings.
+Do not try to ping these roles; it will not work."""
 
 TOKEN = ''
 
 client = discord.Client()
 
-# ACT Inc.'s Code
 
+# ACT Inc.'s Code
 def convertCommonNameToProperName(s):
     for item in valid_helper_roles:
         if s in valid_helper_roles[item]:
@@ -84,14 +94,17 @@ def convertCommonNameToProperName(s):
         return "ambiguous_role"
     return ""
 
+
 def save_object(obj, filename):
     with open(filename, 'wb') as output:  # Overwrites any existing file.
         pickle.dump(obj, output, pickle.HIGHEST_PROTOCOL)
+
 
 def readBlacklist(obj, filename):
     with open(filename, 'rb') as input:
         blu = pickle.load(input)
         return blu
+
 
 blacklisted_users = []
 try:
@@ -102,6 +115,7 @@ except (OSError, IOError) as e:
 users_on_timeout = {}
 messages_to_delete = {}
 pings_needing_confirmation = {}
+
 
 async def updateTimer():
     while True:
@@ -116,6 +130,7 @@ async def updateTimer():
                 await client.send_message(item, "This is your reminder that you are now allowed to ping helpers.")
             del users_on_timeout[item]
 
+
 async def removeMessages():
      while True:
         await asyncio.sleep(1)
@@ -129,6 +144,7 @@ async def removeMessages():
             await client.delete_message(item)
             del messages_to_delete[item]
 
+
 async def checkOnPingRequests():
      while True:
         await asyncio.sleep(1)
@@ -141,10 +157,13 @@ async def checkOnPingRequests():
             await client.delete_message(pings_needing_confirmation[item][2])
             del pings_needing_confirmation[item]
 
+
 @client.event
 async def on_message(message):
     global messages_to_delete
     global help_message
+    global alias_message
+
     if message.author == client.user:
         return
     if message.author in pings_needing_confirmation and message.content.lower()=="y":
@@ -192,8 +211,8 @@ async def on_message(message):
                     for role in ambiguous_roles[common_helper_role]:
                         ambiguous_role_response += "\n* " + role + ": " + ", ".join(valid_helper_roles[role]) + "\n"
                     ambiguous_role_response += "```"
-                    msg = await client.send_message(message.channel, message.author.mention + "\n" + ambiguous_role_response)
-                    messages_to_delete[msg] = 15  
+                    msg = await client.send_message(message.author, ambiguous_role_response)
+                    # messages_to_delete[msg] = 15
                     messages_to_delete[message] = 15 
                 elif (helper_role != ""):
                     msg = await client.send_message(message.channel, message.author.mention + " You are about to ping all the " + helper_role + "s on this server. Please make sure you have clearly elaborated your question and/or shown all work. If you have done so, type Y in the next 15 seconds. After 15 seconds, this message will be deleted and your request will be canceled.")
@@ -201,7 +220,7 @@ async def on_message(message):
                         messages_to_delete[pings_needing_confirmation[message.author][2]] = 1
                     pings_needing_confirmation[message.author] = [15, helper_role, msg]
                 else:
-                    msg = await client.send_message(message.channel, message.author.mention + " Sorry, but there is no helper role \"" + common_helper_role + "\".")
+                    msg = await client.send_message(message.channel, message.author.mention + " Sorry, but there is no helper role named \"" + common_helper_role + "\".")
                     messages_to_delete[msg] = 15
                     messages_to_delete[message] = 15
         else:
