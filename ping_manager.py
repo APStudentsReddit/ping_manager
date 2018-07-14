@@ -70,7 +70,7 @@ alias_message += "\n```"
 
 help_message += "\n\n*Below are mod-only commands*:\n\nTo completely blacklist a user from pinging helpers use: ```!blacklist <user's mention>```\nTo unblacklist a user from pinging helpers use: ```!unblacklist <user's mention>```"
 
-TOKEN = 'NDY3MTcxNTg0MTcyNDkwNzUz.DisuOg.mf8P95PbPLoEkNbn8eo4jzqaOzg'
+TOKEN = ''
 
 client = discord.Client()
 
@@ -201,8 +201,9 @@ async def on_message(message):
                 else:
                     msg = await client.send_message(message.channel, message.author.mention + " %s is already blacklisted from pinging helpers." % user_name)
                     messages_to_delete[msg] = 5
+                    messages_to_delete[message] = 5
         else:
-            msg = await client.send_message(message.channel, message.author.mention + " Sorry, but that command is mods only.")
+            msg = await client.send_message(message.channel, message.author.mention + " Sorry, but that command is for mods only.")
             messages_to_delete[msg] = 5
     elif message.content.startswith('!unblacklist'):
         role_names = [role.name for role in message.author.roles]
@@ -213,12 +214,25 @@ async def on_message(message):
                 if (user_name not in blacklisted_users):
                     msg = await client.send_message(message.channel, message.author.mention + " %s is alrady not blacklisted from pinging helpers." % user_name)
                     messages_to_delete[msg] = 5
+                    messages_to_delete[message] = 5
                 else:
                     blacklisted_users.remove(user_name)
                     msg = await client.send_message(message.channel, message.author.mention + " %s is no longer blacklisted from pinging helpers." % user_name)
         else:
-            msg = await client.send_message(message.channel, message.author.mention + " Sorry, but that command is mods only.")
+            msg = await client.send_message(message.channel, message.author.mention + " Sorry, but that command is for mods only.")
             messages_to_delete[msg] = 5
+    elif message.content.startswith("!getblacklist"):
+        if message.author.server_permissions.manage_server:
+            users_on_blacklist = "Users that are banned from pinging helpers: \n"
+            for user in blacklisted_users:
+                user_info = await client.get_user_info(int(user[2:-1]))
+                users_on_blacklist += "`" + user_info.name + "#" + user_info.discriminator + "`, "
+            await client.send_message(message.author, users_on_blacklist[0:-2])
+            messages_to_delete[message] = 1
+        else:
+            msg = await client.send_message(message.channel, message.author.mention + " Sorry, but that command is for mods only.")
+            messages_to_delete[msg] = 5
+
 
 @client.event
 async def on_ready():

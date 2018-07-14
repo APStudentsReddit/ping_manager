@@ -30,6 +30,6 @@ Contact us for any suggestions for the bot or use GitHub's Issues page.
 ### Current TODO List:
 1. Implement a confirmation of the ping asking if the member has elaborated his or her question.
 1. Delete confirmation messages after the member has either confirmed or changed their mind.
-1. Add a command that will list all of the members that are currently blacklisted.
+1. ~~Add a command that will list all of the members that are currently blacklisted.~~
 1. ~~Complete all aliases for all ap helper roles.~~
 1. ~~Ask user to specify if there are multiple possible helpers (ex. ap computer science a and ap computer science principes)~~
