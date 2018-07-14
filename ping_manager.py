@@ -1,18 +1,45 @@
 import discord
 import asyncio
-import pickle #as pickle
+import pickle
 
-valid_helper_roles = {"Chemistry": ["chem", "chemistry", "ap chem", "chemistry helper"], "U.S History": ["apush", "united states", "us", "us history", "u.s history", "u.s history helper", "apush helper"],
-                        "Calculus": ["calculus", "calculus helper", "ap calc", "calc ab", "calc bc", "calc"],
-                        "Literature": ["lit", "lit helper", "literature", "literature helper", "ap lit", "ap lit helper"],
-                        "Psychology": ["psych", "psych helper", "ap psych", "ap psychology", "psychology helper"],
-                        "Computer Science Principles": ["ap computer science principles", "ap csp", "csp", "computer principles", "computer science principles helper", "computer science principles"],
-                        "Computer Science": ["ap computer science", "ap computer science helper", "ap csa", "computer science", "computer scienceh helper"],
-                        "Biology": ["biology", "biology helper", "ap bio", "ap biology", "ap biology helper", "ap bio helper"],
-                        "U.S Government": ["ap gov", "u.s government helper", "u.s government", "us gov", "gov", "gov helper"],
-                        "Comp. Government": ["comparative government", "comp gov", "comp. gov", "comparatove government helper", "comp gov helper", "comp. gov helper"],
-                        "Macroeconomics": ["ap macro", "macro", "ap macroeconomics", "macroeconomics", "macro helper"],
-                        "Microeconomics": ["ap micro", "micro", "ap microeconomics", "microeconomics", "micro helper"],
+valid_helper_roles = {  
+                        "Art History": ["ap art history", "art history"],
+                        "Biology": ["biology", "ap bio", "ap biology", "bio"],
+                        "Calculus": ["calculus", "ap calc", "calc ab", "calc bc", "calc"],
+                        "Capstone": ["capstone", "ap capstone"],
+                        "Chemistry": ["chem", "chemistry", "ap chem", "ap chemsitry"],
+                        "Chinese": ["ap chinese", "chinese"],
+                        "Comp. Government": ["comparative government", "comp gov", "comp. gov"],
+                        "Computer Science Principles": ["ap computer science principles", "ap csp", "csp", "computer principles", "computer science principles"],
+                        "Computer Science": ["ap computer science a", "ap csa", "computer science a"],
+                        "Environmental Science": ["apes", "environmental science", "ap es", "ap e.s"],
+                        "European History": ["ap euro", "euro", "ap european history", "european history"],
+                        "French": ["ap french", "french"],
+                        "German": ["ap german", "german"],
+                        "Home Economics": ["ap home economics", "ap home ec", "home ec", "home economics"],
+                        "Human Geography": ["human geo", "geography", "geo", "ap geo", "human geography"],
+                        "Italian": ["ap italian", "italian"],
+                        "Japanese": ["ap japanese", "japanese"],
+                        "Language Arts": ["ap language", "ap lang", "lang"],
+                        "Latin": ["ap latin", "latin"],
+                        "Literature": ["lit", "literature", "ap lit", "ap literature"],
+                        "Macroeconomics": ["ap macro", "macro", "ap macroeconomics", "macroeconomics"],
+                        "Microeconomics": ["ap micro", "micro", "ap microeconomics", "microeconomics"],
+                        "Music Theory": ["ap music theory", "music", "music theory", "ap music"],
+                        "Psychology": ["psych", "ap psych", "ap psychology"],
+                        "Physics 1": ["ap physics 1", "physics 1"],
+                        "Physics 2": ["ap physics 2", "physics 2"],
+                        "Physics C Mech": ["ap physics mech", "physics mech"],
+                        "Physics C E/M": ["ap physics e/m", "ap physics e&m", "physics e/m", "physics e&m"],
+                        "Research": ["ap research", "research"],
+                        "Seminar": ["ap seminar", "seminar"],
+                        "Spanish Langauge": ["ap spanish language", "spanish language", "spanish culture"],
+                        "Spanish Literature": ["ap spanish literature", "spanish literature", "spanish lit"],
+                        "Studio Art": ["ap studio art", "studio art"],
+                        "Statistics": ["ap statistics", "ap stats", "stats", "ap statistics"],
+                        "U.S Government": ["ap gov", "u.s government", "us gov", "gov"],
+                        "U.S History": ["apush", "united states", "us history", "u.s history", "ap u.s histroy"],
+                        "World History": ["apwh", "ap world history", "world history", "world", "ap wh"]
                         }
 
 TIMEOUT_TIME = 15
@@ -30,7 +57,7 @@ help += "\n```"
 
 help += "\n\n*Below are mod-only commands*:\n\nTo completely blacklist a user from pinging helpers use: ```!blacklist <user's mention>```\nTo unblacklist a user from pinging helpers use: ```!unblacklist <user's mention>```"
 
-TOKEN = 'NDY3MTcxNTg0MTcyNDkwNzUz.Dim1LQ.hBC0IjvBboKHF1B2HqxUU3Z_5IU'
+TOKEN = ''
 
 client = discord.Client()
 
