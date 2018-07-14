@@ -87,6 +87,20 @@ client = discord.Client()
 
 # ACT Inc.'s Code
 def convertCommonNameToProperName(s):
+    """
+    Converts an alias name to the proper Helper name.
+
+    Parameters
+    ----------
+    s : str
+        An alias for the wanted helper name.
+
+    Returns
+    -------
+    str
+        The helper name, "ambiguous role", or "" (if none are found).
+    """
+
     for item in valid_helper_roles:
         if s in valid_helper_roles[item]:
             return item + " Helper"
@@ -96,11 +110,13 @@ def convertCommonNameToProperName(s):
 
 
 def save_object(obj, filename):
+    """Saves to the pickle file."""
     with open(filename, 'wb') as output:  # Overwrites any existing file.
         pickle.dump(obj, output, pickle.HIGHEST_PROTOCOL)
 
 
 def readBlacklist(obj, filename):
+    """Reads from the previously saved pickle file"""
     with open(filename, 'rb') as input:
         blu = pickle.load(input)
         return blu
@@ -118,6 +134,7 @@ pings_needing_confirmation = {}
 
 
 async def updateTimer():
+    """Updates all students' cooldown periods every second."""
     while True:
         await asyncio.sleep(1)
         names_to_remove = []
@@ -132,6 +149,7 @@ async def updateTimer():
 
 
 async def removeMessages():
+    """Updates sent messages that are to be deleted every second."""
      while True:
         await asyncio.sleep(1)
         messages_to_remove = []
@@ -146,6 +164,7 @@ async def removeMessages():
 
 
 async def checkOnPingRequests():
+    """Timer for ping requests where the student must answer Y."""
      while True:
         await asyncio.sleep(1)
         requests_to_remove = []
@@ -160,6 +179,42 @@ async def checkOnPingRequests():
 
 @client.event
 async def on_message(message):
+    """
+    Handles and interprets all messages sent by the discord and determines if they are commands.
+
+    Parameters
+    ----------
+    message : Message
+        Any message sent that the bot can read.
+
+    Returns
+    -------
+    None
+
+    Notes
+    -----
+    Commands include:
+        !help
+            Privately messages the user our help message.
+        !alias
+            Privately messages the user our alias message.
+        !notify time
+            DM's the user how much longer they must wait to ping again.
+        !notify remind
+            DM's the user when their ping is ready.
+        !ping <subject_alias>
+            When this is called, the member must confirm if they are sure that they want to ping and must respond "Y".
+            If the member confirms it, this will ping all Helpers of the requested subject.
+
+        Mod only (must have Manage Server):
+            !blacklist  <@member>
+                Blacklists a member from using pings.
+            !unblacklist <@member>
+                Removes a member from the blacklist.
+            !getblacklist
+                DM's the user all members that are blacklisted.
+    """
+
     global messages_to_delete
     global help_message
     global alias_message
@@ -279,6 +334,7 @@ async def on_message(message):
 
 @client.event
 async def on_ready():
+    """Prints important bot information and sets up background tasks."""
     print('Logged in as')
     print(client.user.name)
     print(client.user.id)
