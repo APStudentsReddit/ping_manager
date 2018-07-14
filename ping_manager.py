@@ -101,6 +101,7 @@ except (OSError, IOError) as e:
 
 users_on_timeout = {}
 messages_to_delete = {}
+pings_needing_confirmation = {}
 
 async def updateTimer():
     while True:
@@ -128,13 +129,34 @@ async def removeMessages():
             await client.delete_message(item)
             del messages_to_delete[item]
 
+async def checkOnPingRequests():
+     while True:
+        await asyncio.sleep(1)
+        requests_to_remove = []
+        for item in pings_needing_confirmation:
+            pings_needing_confirmation[item][0] = pings_needing_confirmation[item][0] - 1
+            if (pings_needing_confirmation[item][0] <= 0):
+                requests_to_remove.append(item)
+        for item in requests_to_remove:
+            await client.delete_message(pings_needing_confirmation[item][2])
+            del pings_needing_confirmation[item]
+
 @client.event
 async def on_message(message):
     global messages_to_delete
     global help_message
     if message.author == client.user:
         return
-    if message.content.startswith("!help"):
+    if message.author in pings_needing_confirmation and message.content.lower()=="y":
+        role = discord.utils.get(message.server.roles, name=pings_needing_confirmation[message.author][1])
+        await client.edit_role(message.server, role, mentionable=True)
+        await client.send_message(message.channel, "Pinging " + role.mention + " for help.")
+        await client.edit_role(message.server, role, mentionable=False)
+        users_on_timeout[message.author] = [TIMEOUT_TIME, False]
+        messages_to_delete[message] = 1
+        messages_to_delete[pings_needing_confirmation[message.author][2]] = 1
+        del pings_needing_confirmation[message.author]
+    elif message.content.startswith("!help"):
         await client.send_message(message.author, help_message)
         #await client.delete_message(message)
         #messages_to_delete[message] = 3
@@ -174,11 +196,10 @@ async def on_message(message):
                     messages_to_delete[msg] = 15  
                     messages_to_delete[message] = 15 
                 elif (helper_role != ""):
-                    role = discord.utils.get(message.server.roles, name=helper_role)
-                    await client.edit_role(message.server, role, mentionable=True)
-                    await client.send_message(message.channel, "Pinging " + role.mention + " for help.")
-                    await client.edit_role(message.server, role, mentionable=False)
-                    users_on_timeout[message.author] = [TIMEOUT_TIME, False]
+                    msg = await client.send_message(message.channel, message.author.mention + " You are about to ping all the " + helper_role + "s on this server. Please make sure you have clearly elaborated your question and/or shown all work. If you have done so, type Y in the next 15 seconds. After 15 seconds, this message will be deleted and your request will be canceled.")
+                    if (message.author in pings_needing_confirmation):
+                        messages_to_delete[pings_needing_confirmation[message.author][2]] = 1
+                    pings_needing_confirmation[message.author] = [15, helper_role, msg]
                 else:
                     msg = await client.send_message(message.channel, message.author.mention + " Sorry, but there is no helper role \"" + common_helper_role + "\".")
                     messages_to_delete[msg] = 15
@@ -205,6 +226,7 @@ async def on_message(message):
         else:
             msg = await client.send_message(message.channel, message.author.mention + " Sorry, but that command is for mods only.")
             messages_to_delete[msg] = 5
+            messages_to_delete[message] = 5
     elif message.content.startswith('!unblacklist'):
         role_names = [role.name for role in message.author.roles]
         #if "Mod" in role_names:
@@ -221,6 +243,7 @@ async def on_message(message):
         else:
             msg = await client.send_message(message.channel, message.author.mention + " Sorry, but that command is for mods only.")
             messages_to_delete[msg] = 5
+            messages_to_delete[message] = 5
     elif message.content.startswith("!getblacklist"):
         if message.author.server_permissions.manage_server:
             users_on_blacklist = "Users that are banned from pinging helpers: \n"
@@ -232,6 +255,7 @@ async def on_message(message):
         else:
             msg = await client.send_message(message.channel, message.author.mention + " Sorry, but that command is for mods only.")
             messages_to_delete[msg] = 5
+            messages_to_delete[message] = 5
 
 
 @client.event
@@ -243,6 +267,7 @@ async def on_ready():
     await client.change_presence(game=discord.Game(name='By ACT Inc and jjam912'))
     client.loop.create_task(updateTimer())
     client.loop.create_task(removeMessages())
+    client.loop.create_task(checkOnPingRequests())
 
 client.run(TOKEN)
 save_object(blacklisted_users, "blacklist.pkl")
