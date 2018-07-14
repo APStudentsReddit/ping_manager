@@ -26,3 +26,8 @@ This was written to allow students to easily ping the AP Helpers while also prev
 This bot was written by [@ACT Inc.#2590](https://github.com/ikhaliq15) and [@jjam912#2180](https://github.com/jjam912).
 
 Contact us for any suggestions for the bot or use GitHub's Issues page.
+
+### Current TODO List:
+1. Implement a confirmation of the ping asking if the member has elaborated his or her question.
+1. Delete confirmation messages after the member has either confirmed or changed their mind.
+1. Add a command that will list all of the members that are currently blacklisted.
