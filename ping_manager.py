@@ -79,7 +79,7 @@ To get all members who are blacklisted, use: ```!getblacklist```
 **NOTE:** At the request of bork, Computer Science A, Home Economics, and Calculus Helpers will not receive any pings.
 Do not try to ping these roles; it will not work."""
 
-TOKEN = 'NDY3MTcxNTg0MTcyNDkwNzUz.Dis-Kg._atT8OvJcANMNmcALY51I-yiUx8'
+TOKEN = ''
 
 client = discord.Client()
 
@@ -218,6 +218,8 @@ async def on_message(message):
     global help_message
     global alias_message
 
+    message_lower_case = message.content.lower()
+
     if message.author == client.user:
         return
     if message.author in pings_needing_confirmation and message.content.lower()=="y":
@@ -230,13 +232,13 @@ async def on_message(message):
         messages_to_delete[message] = 1
         messages_to_delete[pings_needing_confirmation[message.author][2]] = 1
         del pings_needing_confirmation[message.author]
-    elif message.content.startswith("!help"):
+    elif message_lower_case.startswith("!help"):
         await client.send_message(message.author, help_message)
         #await client.delete_message(message)
         #messages_to_delete[message] = 3
-    elif message.content.startswith("!alias"):
+    elif message_lower_case.startswith("!alias "):
         await client.send_message(message.author, alias_message)
-    elif message.content.startswith('!notify'):
+    elif message_lower_case.startswith('!notify '):
         messages_to_delete[message] = 3
         arg = " ".join(message.content.split(" ")[1:len(message.content.split(" "))]).lower()
         if (arg == "time"):
@@ -253,13 +255,13 @@ async def on_message(message):
                 users_on_timeout[message.author][1] = not users_on_timeout[message.author][1]
             else:
                 await client.send_message(message.author, "You are currently allowed to ping helpers.")
-    elif message.content.startswith('!ping'):
-        if (not message.author.mention in blacklisted_users):
+    elif message_lower_case.startswith('!ping '):
+        if (not message.author.mention in blacklisted_users or message.author.server_permissions.manage_server):
             common_helper_role = " ".join(message.content.split(" ")[1:len(message.content.split(" "))]).lower()
             helper_role = convertCommonNameToProperName(common_helper_role)
-            if (message.author in users_on_timeout):
+            if (message.author in users_on_timeout and not message.author.server_permissions.manage_server):
                 msg = await client.send_message(message.author, message.author.mention + " Sorry, but you cannot ping a helper for " + str(users_on_timeout[message.author][0]) + " seconds.")
-                messages_to_delete[msg] = 5
+                #messages_to_delete[msg] = 5
             else:
                 if (helper_role == "ambiguous_role"):
                     ambiguous_role_response = "There are multiple helper roles that you could be referring to with \"" + common_helper_role + "\". Please specify by using one of the below roles.\n```\n"
@@ -276,14 +278,14 @@ async def on_message(message):
                     pings_needing_confirmation[message.author] = [15, helper_role, msg]
                 else:
                     msg = await client.send_message(message.author, message.author.mention + " Sorry, but there is no helper role named \"" + common_helper_role + "\".")
-                    messages_to_delete[msg] = 15
+                    #messages_to_delete[msg] = 15
                     messages_to_delete[message] = 15
         else:
             msg = await client.send_message(message.author, message.author.mention + " Sorry, but you are blacklisted from pinging helpers.")
             messages_to_delete[message] = 5
             messages_to_delete[msg] = 5
     # Mod Only Commands
-    if message.content.startswith('!blacklist'):
+    if message_lower_case.startswith('!blacklist '):
         role_names = [role.name for role in message.author.roles]
         #if "Mod" in role_names:
         if message.author.server_permissions.manage_server:
@@ -301,7 +303,7 @@ async def on_message(message):
             msg = await client.send_message(message.channel, message.author.mention + " Sorry, but that command is for members with the Manage Server permission only.")
             messages_to_delete[msg] = 5
             messages_to_delete[message] = 5
-    elif message.content.startswith('!unblacklist'):
+    elif message_lower_case.startswith('!unblacklist '):
         role_names = [role.name for role in message.author.roles]
         #if "Mod" in role_names:
         if message.author.server_permissions.manage_server:
@@ -318,7 +320,7 @@ async def on_message(message):
             msg = await client.send_message(message.author, message.author.mention + " Sorry, but that command is for mods only.")
             messages_to_delete[msg] = 5
             messages_to_delete[message] = 5
-    elif message.content.startswith("!getblacklist"):
+    elif message_lower_case.startswith("!getblacklist "):
         if message.author.server_permissions.manage_server:
             users_on_blacklist = "Users that are banned from pinging helpers: \n"
             for user in blacklisted_users:
