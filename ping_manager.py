@@ -238,7 +238,7 @@ async def on_message(message):
         await client.send_message(message.author, help_message)
         #await client.delete_message(message)
         #messages_to_delete[message] = 3
-    elif message_lower_case.startswith("!alias "):
+    elif message_lower_case.startswith("!alias"):
         await client.send_message(message.author, alias_message)
     elif message_lower_case.startswith('!notify '):
         messages_to_delete[message] = 3
@@ -323,7 +323,7 @@ async def on_message(message):
             msg = await client.send_message(message.author, message.author.mention + " Sorry, but that command is for mods only.")
             messages_to_delete[msg] = 5
             messages_to_delete[message] = 5
-    elif message_lower_case.startswith("!getblacklist "):
+    elif message_lower_case.startswith("!getblacklist"):
         if message.author.server_permissions.manage_server:
             users_on_blacklist = "Users that are banned from pinging helpers: \n"
             for user in blacklisted_users:
