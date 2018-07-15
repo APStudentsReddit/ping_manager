@@ -254,7 +254,7 @@ async def on_message(message):
         arg = " ".join(message.content.split(" ")[1:len(message.content.split(" "))]).lower()
         if (arg == "time"):
             if (message.author in users_on_timeout):
-               await client.send_message(message.author, "You will be able to ping for a helper in " + str(users_on_timeout[message.author][0]) + " seconds.")
+               await client.send_message(message.author, "You will be able to ping for a helper in " + str(int(users_on_timeout[message.author][0]/60)) + " minutes and " + str(users_on_timeout[message.author][0] - (int(users_on_timeout[message.author][0]/60)*60)) + " seconds.")
             else:
                 await client.send_message(message.author, "You are currently allowed to ping helpers.")
         elif (arg == "remind"):
@@ -271,7 +271,7 @@ async def on_message(message):
             common_helper_role = " ".join(message.content.split(" ")[1:len(message.content.split(" "))]).lower()
             helper_role = convertCommonNameToProperName(common_helper_role)
             if (message.author in users_on_timeout and not message.author.server_permissions.manage_server):
-                msg = await client.send_message(message.author, message.author.mention + " Sorry, but you cannot ping a helper for " + str(users_on_timeout[message.author][0]) + " seconds.")
+                msg = await client.send_message(message.author, message.author.mention + " Sorry, but you cannot ping a helper for " + str(int(users_on_timeout[message.author][0]/60)) + " minutes and " + str(users_on_timeout[message.author][0] - (int(users_on_timeout[message.author][0]/60)*60)) + " seconds.")
                 #messages_to_delete[msg] = 5
             else:
                 if (helper_role == "ambiguous_role"):
