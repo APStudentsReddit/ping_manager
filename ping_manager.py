@@ -5,7 +5,6 @@ import pickle
 valid_helper_roles = {  
                         "Art History": ["ap art history", "art history"],
                         "Biology": ["biology", "ap bio", "ap biology", "bio"],
-                        "Calculus": ["calculus", "ap calc", "calc ab", "calc bc", "calc", "ab calc", "bc calc"],
                         "Capstone": ["capstone", "ap capstone"],
                         "Chemistry": ["chem", "chemistry", "ap chem", "ap chemistry"],
                         "Chinese": ["ap chinese", "chinese", "中文"],
@@ -77,7 +76,7 @@ To completely blacklist a user from pinging helpers use: ```!blacklist <user's m
 To unblacklist a user from pinging helpers use: ```!unblacklist <user's mention>```
 To get all members who are blacklisted, use: ```!getblacklist```
 
-**NOTE:** At the request of bork, Computer Science A and Home Economics Helpers will not receive any pings.
+**NOTE:** At the request of bork, Computer Science A, Home Economics, and Calculus Helpers will not receive any pings.
 Do not try to ping these roles; it will not work."""
 
 TOKEN = ''
