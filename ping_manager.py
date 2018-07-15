@@ -230,7 +230,7 @@ async def on_message(message):
         del pings_needing_confirmation[message.author]
         role = discord.utils.get(message.server.roles, name=temp_dict[1])
         await client.edit_role(message.server, role, mentionable=True)
-        await client.send_message(message.channel, "Pinging " + role.mention + " for help.")
+        await client.send_message(message.channel, "Pinging " + role.mention + " for help (Ping requested by " + temp_dict[3] +  ").")
         await client.edit_role(message.server, role, mentionable=False)
         if (not message.author.server_permissions.manage_server):
             users_on_timeout[message.author] = [TIMEOUT_TIME, False]
@@ -280,7 +280,7 @@ async def on_message(message):
                     if (message.author in pings_needing_confirmation):
                         messages_to_delete[pings_needing_confirmation[message.author][2]] = 1
                         del pings_needing_confirmation[message.author]
-                    pings_needing_confirmation[message.author] = [15, helper_role, msg]
+                    pings_needing_confirmation[message.author] = [15, helper_role, msg, message.author.mention]
                 else:
                     msg = await client.send_message(message.channel, message.author.mention + " Sorry, but there is no helper role named \"" + common_helper_role + "\".")
                     messages_to_delete[msg] = 15
