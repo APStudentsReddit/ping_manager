@@ -2,6 +2,8 @@ import discord
 import asyncio
 import pickle
 import atexit
+import time
+from ping_config import *
 
 valid_helper_roles = {  
                         "Art History": ["ap art history", "art history"],
@@ -80,8 +82,6 @@ To get all members who are blacklisted, use: ```!getblacklist```
 
 **NOTE:** At the request of bork, Computer Science A, Home Economics, and Calculus Helpers will not receive any pings.
 Do not try to ping these roles; it will not work."""
-
-TOKEN = ''
 
 client = discord.Client()
 
