@@ -166,6 +166,7 @@ async def checkOnPingRequests():
     """Timer for ping requests where the student must answer Y."""
     while True:
         await asyncio.sleep(1)
+        #print (pings_needing_confirmation)
         requests_to_remove = []
         for item in pings_needing_confirmation:
             pings_needing_confirmation[item][0] = pings_needing_confirmation[item][0] - 1
@@ -223,15 +224,16 @@ async def on_message(message):
     if message.author == client.user:
         return
     if message.author in pings_needing_confirmation and message.content.lower()=="y":
-        role = discord.utils.get(message.server.roles, name=pings_needing_confirmation[message.author][1])
+        temp_dict = pings_needing_confirmation[message.author]
+        del pings_needing_confirmation[message.author]
+        role = discord.utils.get(message.server.roles, name=temp_dict[1])
         await client.edit_role(message.server, role, mentionable=True)
         await client.send_message(message.channel, "Pinging " + role.mention + " for help.")
         await client.edit_role(message.server, role, mentionable=False)
         if (not message.author.server_permissions.manage_server):
             users_on_timeout[message.author] = [TIMEOUT_TIME, False]
         messages_to_delete[message] = 1
-        messages_to_delete[pings_needing_confirmation[message.author][2]] = 1
-        del pings_needing_confirmation[message.author]
+        messages_to_delete[temp_dict[2]] = 1
     elif message_lower_case.startswith("!help"):
         await client.send_message(message.author, help_message)
         #await client.delete_message(message)
@@ -268,22 +270,23 @@ async def on_message(message):
                     for role in ambiguous_roles[common_helper_role]:
                         ambiguous_role_response += "\n* " + role + ": " + ", ".join(valid_helper_roles[role]) + "\n"
                     ambiguous_role_response += "```"
-                    msg = await client.send_message(message.author, ambiguous_role_response)
-                    # messages_to_delete[msg] = 15
-                    messages_to_delete[message] = 15 
+                    msg = await client.send_message(message.channel, message.author.mention + " " + ambiguous_role_response)
+                    messages_to_delete[msg] = 30
+                    messages_to_delete[message] = 30 
                 elif (helper_role != ""):
                     msg = await client.send_message(message.channel, message.author.mention + " You are about to ping all the " + helper_role + "s on this server. Please make sure you have clearly elaborated your question and/or shown all work. If you have done so, type Y in the next 15 seconds. After 15 seconds, this message will be deleted and your request will be canceled.")
                     if (message.author in pings_needing_confirmation):
                         messages_to_delete[pings_needing_confirmation[message.author][2]] = 1
+                        del pings_needing_confirmation[message.author]
                     pings_needing_confirmation[message.author] = [15, helper_role, msg]
                 else:
-                    msg = await client.send_message(message.author, message.author.mention + " Sorry, but there is no helper role named \"" + common_helper_role + "\".")
-                    #messages_to_delete[msg] = 15
+                    msg = await client.send_message(message.channel, message.author.mention + " Sorry, but there is no helper role named \"" + common_helper_role + "\".")
+                    messages_to_delete[msg] = 15
                     messages_to_delete[message] = 15
         else:
             msg = await client.send_message(message.author, message.author.mention + " Sorry, but you are blacklisted from pinging helpers.")
             messages_to_delete[message] = 5
-            messages_to_delete[msg] = 5
+            #messages_to_delete[msg] = 5
     # Mod Only Commands
     if message_lower_case.startswith('!blacklist '):
         role_names = [role.name for role in message.author.roles]
