@@ -79,7 +79,7 @@ To get all members who are blacklisted, use: ```!getblacklist```
 **NOTE:** At the request of bork, Computer Science A, Home Economics, and Calculus Helpers will not receive any pings.
 Do not try to ping these roles; it will not work."""
 
-TOKEN = ''
+TOKEN = 'NDY3MTcxNTg0MTcyNDkwNzUz.Dis-Kg._atT8OvJcANMNmcALY51I-yiUx8'
 
 client = discord.Client()
 
@@ -225,7 +225,8 @@ async def on_message(message):
         await client.edit_role(message.server, role, mentionable=True)
         await client.send_message(message.channel, "Pinging " + role.mention + " for help.")
         await client.edit_role(message.server, role, mentionable=False)
-        users_on_timeout[message.author] = [TIMEOUT_TIME, False]
+        if (not message.author.server_permissions.manage_server):
+            users_on_timeout[message.author] = [TIMEOUT_TIME, False]
         messages_to_delete[message] = 1
         messages_to_delete[pings_needing_confirmation[message.author][2]] = 1
         del pings_needing_confirmation[message.author]
