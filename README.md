@@ -26,6 +26,8 @@ This was written to allow students to easily ping the AP Helpers while also prev
         * Unbans a member from using the ping command.
     * !getblacklist
         * Direct messages a list of all blacklisted members.
+    * !setprefix |prefix|
+        * Allows a mod to set the prefix to anything.
         
 Note that there are no pings for Computer Science A, Calculus, or Home Economics Helpers at request of an APStudents mod (those channels are active enough).
     
