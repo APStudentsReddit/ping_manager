@@ -359,4 +359,14 @@ def exit_handler():
 
 atexit.register(exit_handler)
 
-client.run(TOKEN)
+def run_client(client, *args, **kwargs):
+    loop = asyncio.get_event_loop()
+    while True:
+        try:
+            loop.run_until_complete(client.start(*args, **kwargs))
+        except Exception as e:
+            print("Error", e)  # or use proper logging
+        print("Waiting until restart")
+        time.sleep(600)
+
+run_client(client, TOKEN)
