@@ -1,6 +1,7 @@
 import discord
 import asyncio
 import pickle
+import atexit
 
 valid_helper_roles = {  
                         "Art History": ["ap art history", "art history"],
@@ -50,6 +51,7 @@ ambiguous_roles = {
                   }
 
 TIMEOUT_TIME = 3600
+command_starter = "!"
 
 # jjam912's code
 # Set up the help message
@@ -234,13 +236,13 @@ async def on_message(message):
             users_on_timeout[message.author] = [TIMEOUT_TIME, False]
         messages_to_delete[message] = 1
         messages_to_delete[temp_dict[2]] = 1
-    elif message_lower_case.startswith("!help"):
+    elif message_lower_case.startswith(command_starter + "help"):
         await client.send_message(message.author, help_message)
         #await client.delete_message(message)
         #messages_to_delete[message] = 3
-    elif message_lower_case.startswith("!alias"):
+    elif message_lower_case.startswith(command_starter + "alias"):
         await client.send_message(message.author, alias_message)
-    elif message_lower_case.startswith('!notify '):
+    elif message_lower_case.startswith(command_starter + 'notify '):
         messages_to_delete[message] = 3
         arg = " ".join(message.content.split(" ")[1:len(message.content.split(" "))]).lower()
         if (arg == "time"):
@@ -257,7 +259,7 @@ async def on_message(message):
                 users_on_timeout[message.author][1] = not users_on_timeout[message.author][1]
             else:
                 await client.send_message(message.author, "You are currently allowed to ping helpers.")
-    elif message_lower_case.startswith('!ping '):
+    elif message_lower_case.startswith(command_starter + 'ping '):
         if (not message.author.mention in blacklisted_users or message.author.server_permissions.manage_server):
             common_helper_role = " ".join(message.content.split(" ")[1:len(message.content.split(" "))]).lower()
             helper_role = convertCommonNameToProperName(common_helper_role)
@@ -288,7 +290,7 @@ async def on_message(message):
             messages_to_delete[message] = 5
             #messages_to_delete[msg] = 5
     # Mod Only Commands
-    if message_lower_case.startswith('!blacklist '):
+    if message_lower_case.startswith(command_starter + 'blacklist '):
         role_names = [role.name for role in message.author.roles]
         #if "Mod" in role_names:
         if message.author.server_permissions.manage_server:
@@ -306,7 +308,8 @@ async def on_message(message):
             msg = await client.send_message(message.channel, message.author.mention + " Sorry, but that command is for members with the Manage Server permission only.")
             messages_to_delete[msg] = 5
             messages_to_delete[message] = 5
-    elif message_lower_case.startswith('!unblacklist '):
+        exit_handler()
+    elif message_lower_case.startswith(command_starter + 'unblacklist '):
         role_names = [role.name for role in message.author.roles]
         #if "Mod" in role_names:
         if message.author.server_permissions.manage_server:
@@ -323,7 +326,8 @@ async def on_message(message):
             msg = await client.send_message(message.author, message.author.mention + " Sorry, but that command is for mods only.")
             messages_to_delete[msg] = 5
             messages_to_delete[message] = 5
-    elif message_lower_case.startswith("!getblacklist"):
+        exit_handler()
+    elif message_lower_case.startswith(command_starter + "getblacklist"):
         if message.author.server_permissions.manage_server:
             users_on_blacklist = "Users that are banned from pinging helpers: \n"
             for user in blacklisted_users:
@@ -349,6 +353,10 @@ async def on_ready():
     client.loop.create_task(removeMessages())
     client.loop.create_task(checkOnPingRequests())
 
+def exit_handler():
+    save_object(blacklisted_users, "blacklist.pkl")
+    print("Created 'blacklist.pkl'.")
+
+atexit.register(exit_handler)
+
 client.run(TOKEN)
-save_object(blacklisted_users, "blacklist.pkl")
-print("Created 'blacklist.pkl'.")
