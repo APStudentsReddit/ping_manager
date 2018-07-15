@@ -130,6 +130,11 @@ except (OSError, IOError) as e:
     save_object(blacklisted_users, 'blacklist.pkl')
 
 users_on_timeout = {}
+try:
+    users_on_timeout = readBlacklist('d', 'timeouts.pkl')
+except (OSError, IOError) as e:
+    save_object(users_on_timeout, 'timeouts.pkl')
+
 messages_to_delete = {}
 pings_needing_confirmation = {}
 
@@ -147,6 +152,7 @@ async def updateTimer():
             if (users_on_timeout[item][1]):
                 await client.send_message(item, "This is your reminder that you are now allowed to ping helpers.")
             del users_on_timeout[item]
+            save_object(users_on_timeout, 'timeouts.pkl')
 
 
 async def removeMessages():
@@ -234,6 +240,7 @@ async def on_message(message):
         await client.edit_role(message.server, role, mentionable=False)
         if (not message.author.server_permissions.manage_server):
             users_on_timeout[message.author] = [TIMEOUT_TIME, False]
+            save_object(users_on_timeout, 'timeouts.pkl')
         messages_to_delete[message] = 1
         messages_to_delete[temp_dict[2]] = 1
     elif message_lower_case.startswith(command_starter + "help"):
@@ -355,7 +362,9 @@ async def on_ready():
 
 def exit_handler():
     save_object(blacklisted_users, "blacklist.pkl")
-    print("Created 'blacklist.pkl'.")
+    print("\nCreated 'blacklist.pkl'.")
+    save_object(users_on_timeout, 'timeouts.pkl')
+    print("\nCreated 'timeouts.pkl'.")
 
 atexit.register(exit_handler)
 
