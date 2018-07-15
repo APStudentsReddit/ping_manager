@@ -53,7 +53,6 @@ ambiguous_roles = {
                   }
 
 TIMEOUT_TIME = 3600
-command_starter = "!"
 
 # jjam912's code
 # Set up the help message
@@ -79,6 +78,7 @@ help_message += """
 To completely blacklist a user from pinging helpers use: ```!blacklist <user's mention>```
 To unblacklist a user from pinging helpers use: ```!unblacklist <user's mention>```
 To get all members who are blacklisted, use: ```!getblacklist```
+To change the prefix of commands on your server use: ```!setprefix <new_prefix>```
 
 **NOTE:** At the request of bork, Computer Science A, Home Economics, and Calculus Helpers will not receive any pings.
 Do not try to ping these roles; it will not work."""
@@ -134,6 +134,12 @@ try:
     users_on_timeout = readBlacklist('d', 'timeouts.pkl')
 except (OSError, IOError) as e:
     save_object(users_on_timeout, 'timeouts.pkl')
+
+settings = {}
+try:
+    settings = readBlacklist('d', 'settings.pkl')
+except (OSError, IOError) as e:
+    save_object(settings, 'settings.pkl')
 
 messages_to_delete = {}
 pings_needing_confirmation = {}
@@ -221,6 +227,8 @@ async def on_message(message):
                 Removes a member from the blacklist.
             !getblacklist
                 DM's the user all members that are blacklisted.
+            !setprefix <new_prefix>
+                Changes the prefix for new commands.
     """
 
     global messages_to_delete
@@ -228,6 +236,12 @@ async def on_message(message):
     global alias_message
 
     message_lower_case = message.content.lower()
+
+    if (not message.server in settings):
+        settings[message.server] = ["!"]
+        save_object(settings, 'settings.pkl')
+
+    command_starter = settings[message.server][0]
 
     if message.author == client.user:
         return
@@ -244,7 +258,7 @@ async def on_message(message):
         messages_to_delete[message] = 1
         messages_to_delete[temp_dict[2]] = 1
     elif message_lower_case.startswith(command_starter + "help"):
-        await client.send_message(message.author, help_message)
+        await client.send_message(message.author, help_message.replace("!", settings[message.server][0]))
         #await client.delete_message(message)
         #messages_to_delete[message] = 3
     elif message_lower_case.startswith(command_starter + "alias"):
@@ -293,8 +307,8 @@ async def on_message(message):
                     messages_to_delete[msg] = 15
                     messages_to_delete[message] = 15
         else:
-            msg = await client.send_message(message.author, message.author.mention + " Sorry, but you are blacklisted from pinging helpers.")
-            messages_to_delete[message] = 5
+            msg = await client.send_message(message.channel, message.author.mention + " Sorry, but you are blacklisted from pinging helpers.")
+            messages_to_delete[message] = 30
             #messages_to_delete[msg] = 5
     # Mod Only Commands
     if message_lower_case.startswith(command_starter + 'blacklist '):
@@ -309,12 +323,12 @@ async def on_message(message):
                     msg = await client.send_message(message.channel, message.author.mention + (" %s is now blacklisted from pinging helpers. The reason given was: \n" % user_name) + reason)
                 else:
                     msg = await client.send_message(message.channel, message.author.mention + " %s is already blacklisted from pinging helpers." % user_name)
-                    messages_to_delete[msg] = 5
-                    messages_to_delete[message] = 5
+                    messages_to_delete[msg] = 30
+                    messages_to_delete[message] = 30
         else:
             msg = await client.send_message(message.channel, message.author.mention + " Sorry, but that command is for members with the Manage Server permission only.")
-            messages_to_delete[msg] = 5
-            messages_to_delete[message] = 5
+            messages_to_delete[msg] = 30
+            messages_to_delete[message] = 30
         exit_handler()
     elif message_lower_case.startswith(command_starter + 'unblacklist '):
         role_names = [role.name for role in message.author.roles]
@@ -324,15 +338,15 @@ async def on_message(message):
             if (user_name.startswith("<@")):
                 if (user_name not in blacklisted_users):
                     msg = await client.send_message(message.channel, message.author.mention + " %s is alrady not blacklisted from pinging helpers." % user_name)
-                    messages_to_delete[msg] = 5
-                    messages_to_delete[message] = 5
+                    messages_to_delete[msg] = 30
+                    messages_to_delete[message] = 30
                 else:
                     blacklisted_users.remove(user_name)
                     msg = await client.send_message(message.channel, message.author.mention + " %s is no longer blacklisted from pinging helpers." % user_name)
         else:
-            msg = await client.send_message(message.author, message.author.mention + " Sorry, but that command is for mods only.")
-            messages_to_delete[msg] = 5
-            messages_to_delete[message] = 5
+            msg = await client.send_message(message.channel, message.author.mention + " Sorry, but that command is for members with the Manage Server permission only.")
+            messages_to_delete[msg] = 30
+            messages_to_delete[message] = 30
         exit_handler()
     elif message_lower_case.startswith(command_starter + "getblacklist"):
         if message.author.server_permissions.manage_server:
@@ -343,9 +357,21 @@ async def on_message(message):
             await client.send_message(message.author, users_on_blacklist[0:-2])
             messages_to_delete[message] = 1
         else:
-            msg = await client.send_message(message.author, message.author.mention + " Sorry, but that command is for mods only.")
-            messages_to_delete[msg] = 5
-            messages_to_delete[message] = 5
+            msg = await client.send_message(message.channel, message.author.mention + " Sorry, but that command is for members with the Manage Server permission only.")
+            messages_to_delete[msg] = 30
+            messages_to_delete[message] = 30
+    elif message_lower_case.startswith(command_starter + 'setprefix '):
+        role_names = [role.name for role in message.author.roles]
+        #if "Mod" in role_names:
+        if message.author.server_permissions.manage_server:
+            prefix = " ".join(message.content.split(" ")[1:len(message.content.split(" "))]).lower()
+            settings[message.server] = prefix.strip()
+            save_object(settings, 'settings.pkl')
+            msg = await client.send_message(message.channel, message.author.mention + " The prefix for commands on this server is now \"" + prefix.strip() + "\".")
+        else:
+            msg = await client.send_message(message.channel, message.author.mention + " Sorry, but that command is for members with the Manage Server permission only.")
+            messages_to_delete[msg] = 30
+            messages_to_delete[message] = 30
 
 
 @client.event
@@ -364,7 +390,10 @@ def exit_handler():
     save_object(blacklisted_users, "blacklist.pkl")
     print("\nCreated 'blacklist.pkl'.")
     save_object(users_on_timeout, 'timeouts.pkl')
-    print("\nCreated 'timeouts.pkl'.")
+    print("Created 'timeouts.pkl'.")
+    save_object(settings, 'settings.pkl')
+    print("Created 'settings.pkl'.")
+
 
 atexit.register(exit_handler)
 
