@@ -3,6 +3,7 @@ import asyncio
 import pickle
 import atexit
 import time
+from discord.ext import commands
 from ping_config import *
 
 valid_helper_roles = {  
@@ -264,29 +265,34 @@ async def on_message(message):
     elif message_lower_case.startswith(command_starter + "alias"):
         await client.send_message(message.author, alias_message)
     elif message_lower_case.startswith(command_starter + 'notify '):
-        messages_to_delete[message] = 3
+        messages_to_delete[message] = 30
         arg = " ".join(message.content.split(" ")[1:len(message.content.split(" "))]).lower()
         if (arg == "time"):
             if (message.author in users_on_timeout):
-               await client.send_message(message.author, "You will be able to ping for a helper in " + str(int(users_on_timeout[message.author][0]/60)) + " minutes and " + str(users_on_timeout[message.author][0] - (int(users_on_timeout[message.author][0]/60)*60)) + " seconds.")
+                msg = await client.send_message(message.channel, "You will be able to ping for a helper in " + str(int(users_on_timeout[message.author][0]/60)) + " minutes and " + str(users_on_timeout[message.author][0] - (int(users_on_timeout[message.author][0]/60)*60)) + " seconds.")
+                messages_to_delete[msg] = 30
             else:
-                await client.send_message(message.author, "You are currently allowed to ping helpers.")
+                msg = await client.send_message(message.channel, "You are currently allowed to ping helpers.")
+                messages_to_delete[msg] = 30
         elif (arg == "remind"):
             if (message.author in users_on_timeout):
                 if (users_on_timeout[message.author][1]):
-                    await client.send_message(message.author, "You will no longer be receiving a reminder for when you can ping a helper.")
+                    msg = await client.send_message(message.channel, "You will no longer be receiving a reminder for when you can ping a helper.")
+                    messages_to_delete[msg] = 30
                 else:
-                    await client.send_message(message.author, "You will receive a reminder once you are allowed to ping a helper.")
+                    msg = await client.send_message(message.channel, "You will receive a reminder once you are allowed to ping a helper.")
+                    messages_to_delete[msg] = 30
                 users_on_timeout[message.author][1] = not users_on_timeout[message.author][1]
             else:
-                await client.send_message(message.author, "You are currently allowed to ping helpers.")
+                msg = await client.send_message(message.channel, "You are currently allowed to ping helpers.")
+                messages_to_delete[msg] = 30
     elif message_lower_case.startswith(command_starter + 'ping '):
         if (not message.author.mention in blacklisted_users or message.author.server_permissions.manage_server):
             common_helper_role = " ".join(message.content.split(" ")[1:len(message.content.split(" "))]).lower()
             helper_role = convertCommonNameToProperName(common_helper_role)
             if (message.author in users_on_timeout and not message.author.server_permissions.manage_server):
-                msg = await client.send_message(message.author, message.author.mention + " Sorry, but you cannot ping a helper for " + str(int(users_on_timeout[message.author][0]/60)) + " minutes and " + str(users_on_timeout[message.author][0] - (int(users_on_timeout[message.author][0]/60)*60)) + " seconds.")
-                #messages_to_delete[msg] = 5
+                msg = await client.send_message(message.channel, message.author.mention + " Sorry, but you cannot ping a helper for " + str(int(users_on_timeout[message.author][0]/60)) + " minutes and " + str(users_on_timeout[message.author][0] - (int(users_on_timeout[message.author][0]/60)*60)) + " seconds.")
+                messages_to_delete[msg] = 30
             else:
                 if (helper_role == "ambiguous_role"):
                     ambiguous_role_response = "There are multiple helper roles that you could be referring to with \"" + common_helper_role + "\". Please specify by using one of the below roles.\n```\n"
