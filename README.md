@@ -19,7 +19,7 @@ This was written to allow students to easily ping the AP Helpers while also prev
     * DM's all aliases for the Helper roles.
 
     #### Mod commands
-    To use these commands, the user must have the Manage Servers permission.
+    To use these commands, the user must have the Manage Guilds permission.
     * !blacklist |@member|
         * Bans a member from using the ping command.
     * !unblacklist |@member|
