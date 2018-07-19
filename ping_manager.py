@@ -13,6 +13,8 @@ This was written using discord.py rewrite.
 
 # This bot is only meant to be run on one server, so hardcoding this id seems fine (tell me if it isn't).
 GUILD_ID = 420053499707916288     # Currently set to JJam912's Bot Army
+KEY_BLACKLIST = "blacklist"
+KEY_PREFIX = "prefix"
 
 bot = commands.Bot(description=DESCRIPTION, command_prefix="!")
 bot.remove_command("help")
@@ -349,17 +351,22 @@ def write_data():
     with open("blacklist.json", mode="w") as f:
         for i in range(len(blacklisted_users)):
             blacklisted_users[i] = blacklisted_users[i].id
-        f.write(json.dumps(blacklisted_users))
+        var_dict = {KEY_BLACKLIST: blacklisted_users, KEY_PREFIX: bot.command_prefix}
+        f.write(json.dumps(var_dict))
         print("Data written!")
 
 
 def load_data():
     """Reads the ids from the blacklist from the JSON file"""
+
     global blacklisted_users
     print("Loading data...")
     with open("blacklist.json", mode="r") as f:
         try:
-            blacklisted_users = json.loads(f.read())
+            var_dict = json.loads(f.read())
+            blacklisted_users = var_dict[KEY_BLACKLIST]
+            bot.command_prefix = var_dict[KEY_PREFIX]
+
         except JSONDecodeError:
             print("Invalid data found.")
             print("File contents: " + f.read())
@@ -370,6 +377,7 @@ def load_data():
 def convert_ids():
     """Converts all ids of the server from the blacklist by using the GUILD_ID constant."""
     global blacklisted_users
+
     print("Converting ids")
     for i in range(len(blacklisted_users)):
         blacklisted_users[i] = bot.get_guild(GUILD_ID).get_member(blacklisted_users[i])
