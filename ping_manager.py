@@ -399,8 +399,13 @@ def convert_ids():
 
     global blacklisted_users
     print("Converting ids")
-    for i in range(len(blacklisted_users)):
-        blacklisted_users[i] = bot.get_guild(GUILD_ID).get_member(blacklisted_users[i])
+
+    for i in range(len(blacklisted_users) - 1, -1, -1):
+        member = bot.get_guild(GUILD_ID).get_member(blacklisted_users[i])
+        if member is None:
+            del blacklisted_users[i]
+        else:
+            blacklisted_users[i] = member
     else:
         print("Members converted from ids successfully.")
 
