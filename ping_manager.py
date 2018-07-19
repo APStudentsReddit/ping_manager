@@ -101,7 +101,7 @@ AMBIGUOUS = "Ambiguous role"
 HELPER_SUFFIX = " Helper"
 
 
-def convert_alias(s):
+def convert_alias(alias):
     """
     Converts an alias name to the proper Helper name.
 
@@ -116,10 +116,10 @@ def convert_alias(s):
         The helper name, "ambiguous role", or "" (if none are found).
     """
 
-    for item in HELPER_ROLES:
-        if s in HELPER_ROLES[item]:
-            return item + HELPER_SUFFIX
-    if s in AMBIGUOUS_ROLES:
+    for role in HELPER_ROLES:
+        if alias in HELPER_ROLES[role]:
+            return role + HELPER_SUFFIX
+    if alias in AMBIGUOUS_ROLES:
         return AMBIGUOUS
     return None
 
@@ -345,15 +345,15 @@ async def ping(ctx, *, role):
 
     helper_role = convert_alias(role)
 
-    if helper_role is None and helper_role != AMBIGUOUS:
+    if helper_role is None:
         await ctx.send("Sorry, invalid alias.", delete_after=60)
         return
 
     if helper_role == AMBIGUOUS:
         ambiguous_role_response = "There are multiple helper roles that you could be referring to with." \
                                   "  Please specify by using one of the below roles and try again.\n```\n"
-        for role in AMBIGUOUS_ROLES[helper_role]:
-            ambiguous_role_response += "\n* " + role + ": " + ", ".join(HELPER_ROLES[role]) + "\n"
+        for r in AMBIGUOUS_ROLES[role]:
+            ambiguous_role_response += "\n* " + r + ": " + ", ".join(HELPER_ROLES[r]) + "\n"
         ambiguous_role_response += "```"
 
         await ctx.send(ctx.author.name + ", " + ambiguous_role_response, delete_after=60)
