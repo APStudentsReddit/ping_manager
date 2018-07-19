@@ -295,8 +295,11 @@ async def blacklist(ctx, member: discord.Member):
     """Adds a member to the blacklist."""
     if not ctx.author.guild_permissions.manage_guild:
         return
-    blacklisted_users.append(member)
-    await ctx.send("{0} has been blacklisted by {1}.".format(member.name, ctx.author.name))
+    if member not in blacklisted_users:
+        blacklisted_users.append(member)
+        await ctx.send("{0} has been blacklisted by {1}.".format(member.name, ctx.author.name))
+    else:
+        await ctx.send("{0} was already blacklisted".format(member.name))
 
 
 @bot.command()
