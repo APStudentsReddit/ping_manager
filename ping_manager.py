@@ -19,6 +19,15 @@ KEY_PREFIX = "prefix"
 bot = commands.Bot(description=DESCRIPTION, command_prefix="!")
 bot.remove_command("help")
 
+blacklisted_users = []
+users_on_timeout = {}
+users_to_remind = []
+
+AMBIGUOUS = "Ambiguous role"
+HELPER_SUFFIX = " Helper"
+
+TIMEOUT_TIME = 3600
+
 HELPER_ROLES = \
     {
         "Art History": ["ap art history", "art history"],
@@ -68,8 +77,6 @@ AMBIGUOUS_ROLES = {
                     "government": ["U.S Government", "Comp. Government"],
                   }
 
-TIMEOUT_TIME = 3600
-
 HELP_MESSAGE = """To ping helpers, use ```{0}ping <helper alias>```
 Be careful when using this command! 
 It will ping all helpers of that role, and you will not be able to ping again for """ + str(TIMEOUT_TIME) + """ seconds.
@@ -94,15 +101,7 @@ Do not try to ping these roles; it will not work."""
 ALIAS_MESSAGE = "Alias for helpers:```"
 for subject in HELPER_ROLES.keys():
     ALIAS_MESSAGE += "* {0}: {1}\n".format(subject, ", ".join(HELPER_ROLES[subject]))
-
 ALIAS_MESSAGE += "\n```"
-
-blacklisted_users = []
-users_on_timeout = {}
-users_to_remind = []
-
-AMBIGUOUS = "Ambiguous role"
-HELPER_SUFFIX = " Helper"
 
 
 def convert_alias(alias):
