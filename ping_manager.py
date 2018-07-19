@@ -1,6 +1,8 @@
 import discord
 import asyncio
 from discord.ext import commands
+import json
+from json.decoder import JSONDecodeError
 
 
 DESCRIPTION = """This bot is used to ping helpers while also preventing spamming of pings in the APStudents discord.
@@ -9,8 +11,8 @@ You can find our github at https://github.com/APStudentsReddit/ping_manager/tree
 This was written using discord.py rewrite.
 """
 
-# This bot is only meant to be run on one server, so hardcoding this seems fine.
-GUILD_ID = "420053499707916288"     # JSON only allows string keys :(
+# This bot is only meant to be run on one server, so hardcoding this id seems fine (tell me if it isn't).
+GUILD_ID = 420053499707916288     # Currently set to JJam912's Bot Army
 
 bot = commands.Bot(description=DESCRIPTION, command_prefix="!")
 bot.remove_command("help")
@@ -179,148 +181,16 @@ async def on_message(message):
                 Changes the prefix for new commands.
     """
 
-    if message.guild.id != int(GUILD_ID):
+    if message.guild.id != GUILD_ID:    # Prevent anyone from accessing the blacklist from another server.
         return
 
     message.content = message.content.lower()
     await bot.process_commands(message)
 
-    # if message.author in pings_needing_confirmation and message.content.lower()=="y":
-    #     temp_dict = pings_needing_confirmation[message.author]
-    #     del pings_needing_confirmation[message.author]
-    #     role = discord.utils.get(message.server.roles, name=temp_dict[1])
-    #     await bot.edit_role(message.server, role, mentionable=True)
-    #     await bot.send_message(message.channel, "Pinging " + role.mention + " for help (Ping requested by " + temp_dict[3] + ").")
-    #     await bot.edit_role(message.server, role, mentionable=False)
-    #     if (not message.author.server_permissions.manage_server):
-    #         users_on_timeout[message.author] = [TIMEOUT_TIME, False]
-    #         save_object(users_on_timeout, 'timeouts.pkl')
-    #     messages_to_delete[message] = 1
-    #     messages_to_delete[temp_dict[2]] = 1
-    # elif message_lower_case.startswith(command_starter + "help"):
-    #     await bot.send_message(message.author, HELP_MESSAGE.replace("!", settings[message.server][0]))
-    #     #await client.delete_message(message)
-    #     #messages_to_delete[message] = 3
-    # elif message_lower_case.startswith(command_starter + "alias"):
-    #     await bot.send_message(message.author, ALIAS_MESSAGE)
-    # elif message_lower_case.startswith(command_starter + 'notify '):
-    #     messages_to_delete[message] = 30
-    #     arg = " ".join(message.content.split(" ")[1:len(message.content.split(" "))]).lower()
-    #     if (arg == "time"):
-    #         if (message.author in users_on_timeout):
-    #             msg = await bot.send_message(message.channel, "You will be able to ping for a helper in " + str(int(users_on_timeout[message.author][0] / 60)) + " minutes and " + str(users_on_timeout[message.author][0] - (int(users_on_timeout[message.author][0] / 60) * 60)) + " seconds.")
-    #             messages_to_delete[msg] = 30
-    #         else:
-    #             msg = await bot.send_message(message.channel, "You are currently allowed to ping helpers.")
-    #             messages_to_delete[msg] = 30
-    #     elif (arg == "remind"):
-    #         if (message.author in users_on_timeout):
-    #             if (users_on_timeout[message.author][1]):
-    #                 msg = await bot.send_message(message.channel, "You will no longer be receiving a reminder for when you can ping a helper.")
-    #                 messages_to_delete[msg] = 30
-    #             else:
-    #                 msg = await bot.send_message(message.channel, "You will receive a reminder once you are allowed to ping a helper.")
-    #                 messages_to_delete[msg] = 30
-    #             users_on_timeout[message.author][1] = not users_on_timeout[message.author][1]
-    #         else:
-    #             msg = await bot.send_message(message.channel, "You are currently allowed to ping helpers.")
-    #             messages_to_delete[msg] = 30
-    # elif message_lower_case.startswith(command_starter + 'ping '):
-    #     if (not message.author.mention in blacklisted_users or message.author.server_permissions.manage_server):
-    #         common_helper_role = " ".join(message.content.split(" ")[1:len(message.content.split(" "))]).lower()
-    #         helper_role = convertCommonNameToProperName(common_helper_role)
-    #         if (message.author in users_on_timeout and not message.author.server_permissions.manage_server):
-    #             msg = await bot.send_message(message.channel, message.author.mention + " Sorry, but you cannot ping a helper for " + str(int(users_on_timeout[message.author][0] / 60)) + " minutes and " + str(users_on_timeout[message.author][0] - (int(users_on_timeout[message.author][0] / 60) * 60)) + " seconds.")
-    #             messages_to_delete[msg] = 30
-    #         else:
-    #             if (helper_role == "ambiguous_role"):
-    #                 ambiguous_role_response = "There are multiple helper roles that you could be referring to with \"" + common_helper_role + "\". Please specify by using one of the below roles.\n```\n"
-    #                 for role in AMBIGUOUS_ROLES[common_helper_role]:
-    #                     ambiguous_role_response += "\n* " + role + ": " + ", ".join(HELPER_ROLES[role]) + "\n"
-    #                 ambiguous_role_response += "```"
-    #                 msg = await bot.send_message(message.channel, message.author.mention + " " + ambiguous_role_response)
-    #                 messages_to_delete[msg] = 30
-    #                 messages_to_delete[message] = 30
-    #             elif (helper_role != ""):
-    #                 msg = await bot.send_message(message.channel, message.author.mention + " You are about to ping all the " + helper_role + "s on this server. Please make sure you have clearly elaborated your question and/or shown all work. If you have done so, type Y in the next 15 seconds. After 15 seconds, this message will be deleted and your request will be canceled.")
-    #                 if (message.author in pings_needing_confirmation):
-    #                     messages_to_delete[pings_needing_confirmation[message.author][2]] = 1
-    #                     del pings_needing_confirmation[message.author]
-    #                 pings_needing_confirmation[message.author] = [15, helper_role, msg, message.author.mention]
-    #             else:
-    #                 msg = await bot.send_message(message.channel, message.author.mention + " Sorry, but there is no helper role named \"" + common_helper_role + "\".")
-    #                 messages_to_delete[msg] = 15
-    #                 messages_to_delete[message] = 15
-    #     else:
-    #         msg = await bot.send_message(message.channel, message.author.mention + " Sorry, but you are blacklisted from pinging helpers.")
-    #         messages_to_delete[message] = 30
-    #         #messages_to_delete[msg] = 5
-    # # Mod Only Commands
-    # if message_lower_case.startswith(command_starter + 'blacklist '):
-    #     role_names = [role.name for role in message.author.roles]
-    #     #if "Mod" in role_names:
-    #     if message.author.server_permissions.manage_server:
-    #         user_name = message.content.split(" ")[1].lower()
-    #         reason = " ".join(message.content.split(" ")[2:len(message.content.split(" "))]).lower()
-    #         if (user_name.startswith("<@")):
-    #             if (user_name not in blacklisted_users):
-    #                 blacklisted_users.append(user_name)
-    #                 msg = await bot.send_message(message.channel, message.author.mention + (" %s is now blacklisted from pinging helpers. The reason given was: \n" % user_name) + reason)
-    #             else:
-    #                 msg = await bot.send_message(message.channel, message.author.mention + " %s is already blacklisted from pinging helpers." % user_name)
-    #                 messages_to_delete[msg] = 30
-    #                 messages_to_delete[message] = 30
-    #     else:
-    #         msg = await bot.send_message(message.channel, message.author.mention + " Sorry, but that command is for members with the Manage Server permission only.")
-    #         messages_to_delete[msg] = 30
-    #         messages_to_delete[message] = 30
-    #     exit_handler()
-    # elif message_lower_case.startswith(command_starter + 'unblacklist '):
-    #     role_names = [role.name for role in message.author.roles]
-    #     #if "Mod" in role_names:
-    #     if message.author.server_permissions.manage_server:
-    #         user_name = " ".join(message.content.split(" ")[1:len(message.content.split(" "))]).lower()
-    #         if (user_name.startswith("<@")):
-    #             if (user_name not in blacklisted_users):
-    #                 msg = await bot.send_message(message.channel, message.author.mention + " %s is alrady not blacklisted from pinging helpers." % user_name)
-    #                 messages_to_delete[msg] = 30
-    #                 messages_to_delete[message] = 30
-    #             else:
-    #                 blacklisted_users.remove(user_name)
-    #                 msg = await bot.send_message(message.channel, message.author.mention + " %s is no longer blacklisted from pinging helpers." % user_name)
-    #     else:
-    #         msg = await bot.send_message(message.channel, message.author.mention + " Sorry, but that command is for members with the Manage Server permission only.")
-    #         messages_to_delete[msg] = 30
-    #         messages_to_delete[message] = 30
-    #     exit_handler()
-    # elif message_lower_case.startswith(command_starter + "getblacklist"):
-    #     if message.author.server_permissions.manage_server:
-    #         users_on_blacklist = "Users that are banned from pinging helpers: \n"
-    #         for user in blacklisted_users:
-    #             user_info = await bot.get_user_info(int(user[2:-1]))
-    #             users_on_blacklist += "`" + user_info.name + "#" + user_info.discriminator + "`, "
-    #         await bot.send_message(message.author, users_on_blacklist[0:-2])
-    #         messages_to_delete[message] = 1
-    #     else:
-    #         msg = await bot.send_message(message.channel, message.author.mention + " Sorry, but that command is for members with the Manage Server permission only.")
-    #         messages_to_delete[msg] = 30
-    #         messages_to_delete[message] = 30
-    # elif message_lower_case.startswith(command_starter + 'setprefix '):
-    #     role_names = [role.name for role in message.author.roles]
-    #     #if "Mod" in role_names:
-    #     if message.author.server_permissions.manage_server:
-    #         prefix = " ".join(message.content.split(" ")[1:len(message.content.split(" "))]).lower()
-    #         settings[message.server] = prefix.strip()
-    #         save_object(settings, 'settings.pkl')
-    #         msg = await bot.send_message(message.channel, message.author.mention + " The prefix for commands on this server is now \"" + prefix.strip() + "\".")
-    #     else:
-    #         msg = await bot.send_message(message.channel, message.author.mention + " Sorry, but that command is for members with the Manage Server permission only.")
-    #         messages_to_delete[msg] = 30
-    #         messages_to_delete[message] = 30
-
 
 @bot.command()
 async def help(ctx):
+    await ctx.author.send(bot.description)
     await ctx.author.send(HELP_MESSAGE.format(bot.command_prefix))
     await ctx.message.delete()
 
@@ -337,16 +207,16 @@ async def ping(ctx, *, role):
         await ctx.send("Sorry, but you are blacklisted from pinging helpers.", delete_after=60)
         return
 
-    if ctx.author in users_on_timeout and not ctx.author.guild_permissions.manage_server:
+    if ctx.author in users_on_timeout and not ctx.author.guild_permissions.manage_guild:
         time_left = users_on_timeout[ctx.author]    # In seconds
-        await ctx.send("Sorry, but you still have to wait {0} minutes and {1} seconds"
-                       .format(time_left // 60, time_left - time_left // 60), delete_after=60)
+        await ctx.send("Sorry {0}, but you still have to wait {1} minutes and {2} seconds"
+                       .format(ctx.author.name, time_left // 60, time_left - time_left // 60), delete_after=60)
         return
 
     helper_role = convert_alias(role)
 
     if helper_role is None:
-        await ctx.send("Sorry, invalid alias.", delete_after=60)
+        await ctx.send("Sorry {0}, invalid alias.".format(ctx.author.name), delete_after=60)
         return
 
     if helper_role == AMBIGUOUS:
@@ -363,7 +233,7 @@ async def ping(ctx, *, role):
     YES = ["y", "yes"]
     NO = ["n", "no", "stop", "cancel", "exit", "quit"]
 
-    confirm_ping = await ctx.send("{0} You are about to ping all the {1}s on this server. " 
+    confirm_ping = await ctx.send("{0}, You are about to ping all the {1}s on this server. " 
                                   "Please make sure you have clearly elaborated your question and/or shown all work. \n""If you have done so, type Y or Yes in the next 30 seconds. \n"
                                   "To cancel, type N, No, Stop, Cancel, Exit, or Quit.\n"
                                   "After 30 seconds, this message will be deleted and your request will be canceled."
@@ -378,12 +248,12 @@ async def ping(ctx, *, role):
     try:
         user_confirm = await bot.wait_for('message', timeout=30, check=ping_check)
     except asyncio.TimeoutError:
-        await ctx.send("Timed out!", delete_after=5)
+        await ctx.send("Timed out!", delete_after=10)
         await confirm_ping.delete()
         await ctx.message.delete()
         return
     if user_confirm.content in NO:
-        await ctx.send("Canceling request...", delete_after=5)
+        await ctx.send("Canceling request...", delete_after=10)
         await confirm_ping.delete()
         await user_confirm.delete()
         await ctx.message.delete()
@@ -395,6 +265,8 @@ async def ping(ctx, *, role):
     await ctx.send("Ping requested by {0} for {1}".format(ctx.author.mention, actual_role.mention))
     await actual_role.edit(mentionable=False)
 
+    users_on_timeout[ctx.author] = TIMEOUT_TIME
+
     await confirm_ping.delete()
     await user_confirm.delete()
     await ctx.message.delete()
@@ -402,31 +274,48 @@ async def ping(ctx, *, role):
 
 @bot.command()
 async def time(ctx):
-    pass
+    time_left = users_on_timeout[ctx.author]  # In seconds
+    await ctx.send("Sorry {0}, but you still have to wait {1} minutes and {2} seconds"
+                   .format(ctx.author.name, time_left // 60, time_left - time_left // 60), delete_after=60)
 
 
 @bot.command()
 async def remind(ctx):
-    pass
+    users_to_remind.append(ctx.author)
+    await ctx.send("{0}, you will receive a DM when you are allowed to ping again.".format(ctx.author.name))
 
 
 @bot.command()
-async def blacklist(ctx):
-    pass
+async def blacklist(ctx, member: discord.Member):
+    if not ctx.author.guild_permissions.manage_guild:
+        return
+    blacklisted_users.append(member)
+    await ctx.send("{0} has been blacklisted by {1}.".format(member.name, ctx.author.name))
 
 
 @bot.command()
-async def unblacklist(ctx):
-    pass
+async def unblacklist(ctx, member: discord.Member):
+    if not ctx.author.guild_permissions.manage_guild:
+        return
+    if member in blacklisted_users:
+        del blacklisted_users[blacklisted_users.index(member)]
+        await ctx.send("{0} was unblacklisted by {1}.".format(member.name, ctx.author.name))
 
 
 @bot.command()
 async def getblacklist(ctx):
-    pass
+    if not ctx.author.guild_permissions.manage_guild:
+        return
+    if blacklisted_users:
+        await ctx.send("Blacklisted members are: " + ", ".join(list(map(lambda x: x.name, blacklisted_users))))
+    else:
+        await ctx.send("No members are blacklisted.")
 
 
 @bot.command()
 async def setprefix(ctx, prefix: str):
+    if not ctx.author.guild_permissions.manage_guild:
+        return
     bot.command_prefix = prefix
     await ctx.send("Bot prefix set to " + prefix)
 
@@ -440,6 +329,37 @@ async def on_ready():
     print('------')
     await bot.change_presence(activity=discord.Game(name='By ACT Inc. and jjam912'))
     bot.loop.create_task(update_timer())
+    convert_ids()
+
+
+def write_data():
+    with open("blacklist.json", mode="w") as f:
+        for i in range(len(blacklisted_users)):
+            blacklisted_users[i] = blacklisted_users[i].id
+        f.write(json.dumps(blacklisted_users))
+        print("Data written!")
+
+
+def load_data():
+    global blacklisted_users
+    print("Loading data...")
+    with open("blacklist.json", mode="r") as f:
+        try:
+            blacklisted_users = json.loads(f.read())
+        except JSONDecodeError:
+            print("Invalid data found.")
+            print("File contents: " + f.read())
+        else:
+            print("Data loaded successfully.")
+
+
+def convert_ids():
+    global blacklisted_users
+    print("Converting ids")
+    for i in range(len(blacklisted_users)):
+        blacklisted_users[i] = bot.get_guild(GUILD_ID).get_member(blacklisted_users[i])
+    else:
+        print("Members converted from ids successfully.")
 
 
 @asyncio.coroutine
@@ -451,15 +371,10 @@ def main_task():
 loop = asyncio.get_event_loop()
 
 try:
-    # load_data()
+    load_data()
     loop.run_until_complete(main_task())
 except:
     loop.run_until_complete(bot.logout())
 finally:
     loop.close()
-    while True:     # To prevent accidents
-        try:
-            # write_data()
-            break
-        except KeyboardInterrupt:
-            pass
+    write_data()
