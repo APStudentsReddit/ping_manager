@@ -26,7 +26,7 @@ users_to_remind = []
 AMBIGUOUS = "Ambiguous role"
 HELPER_SUFFIX = " Helper"
 
-TIMEOUT_TIME = 3600
+TIMEOUT_TIME = 60
 
 HELPER_ROLES = \
     {
@@ -407,7 +407,7 @@ def convert_ids():
 
 @asyncio.coroutine
 def main_task():
-    yield from bot.login()
+    yield from bot.login("NDY3NjQzNTg1NTU1MjAyMDQ5.DjIXwA.dVw7uKkQ84nzCDhEOKxdzwuZLSE")
     yield from bot.connect()
 
 
