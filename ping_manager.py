@@ -130,6 +130,7 @@ def convert_alias(alias):
 
 async def update_timer():
     """Updates all students' cooldown periods every second."""
+
     while True:
         await asyncio.sleep(1)
         names_to_remove = []
@@ -171,6 +172,7 @@ async def on_message(message):
 @bot.command()
 async def help(ctx):
     """DMs bot description and help for the requester."""
+
     await ctx.author.send(bot.description)
     await ctx.author.send(HELP_MESSAGE.format(bot.command_prefix))
     await ctx.message.delete()
@@ -179,6 +181,7 @@ async def help(ctx):
 @bot.command()
 async def alias(ctx):
     """DMs helper aliases to the requester."""
+
     await ctx.author.send(ALIAS_MESSAGE)
     await ctx.message.delete()
 
@@ -280,21 +283,34 @@ async def ping(ctx, *, alias: str):
 @bot.command()
 async def time(ctx):
     """Tells the member how much time they have left before being able to ping again."""
-    time_left = users_on_timeout[ctx.author]  # In seconds
-    await ctx.send("Sorry {0}, but you still have to wait {1} minutes and {2} seconds"
+
+    try:
+        time_left = users_on_timeout[ctx.author]  # In seconds
+        await ctx.send("{0}, you still have to wait {1} minutes and {2} seconds"
                    .format(ctx.author.name, time_left // 60, time_left - time_left // 60), delete_after=60)
+    except KeyError:
+        await ctx.send("{0}, you are currently allowed to ping a helper.".format(ctx.author.name), delete_after=60)
 
 
 @bot.command()
 async def remind(ctx):
     """Informs the member that they will be DMed when they are allowed to ping again."""
+
+    try:
+        _ = users_on_timeout[ctx.author]
+    except KeyError:
+        await ctx.send("{0}, you are currently allowed to ping a helper.".format(ctx.author.name), delete_after=60)
+        return
+
     users_to_remind.append(ctx.author)
-    await ctx.send("{0}, you will receive a DM when you are allowed to ping again.".format(ctx.author.name))
+    await ctx.send("{0}, you will receive a DM when you are allowed to ping again.".format(ctx.author.name),
+                   delete_after=60)
 
 
 @bot.command()
 async def blacklist(ctx, member: discord.Member):
     """Adds a member to the blacklist."""
+
     if not ctx.author.guild_permissions.manage_guild:
         return
     if member not in blacklisted_users:
@@ -307,6 +323,7 @@ async def blacklist(ctx, member: discord.Member):
 @bot.command()
 async def unblacklist(ctx, member: discord.Member):
     """Removes a member from the blacklist."""
+
     if not ctx.author.guild_permissions.manage_guild:
         return
     if member in blacklisted_users:
@@ -317,6 +334,7 @@ async def unblacklist(ctx, member: discord.Member):
 @bot.command()
 async def getblacklist(ctx):
     """Sends the blacklist by converting the members to their names."""
+
     if not ctx.author.guild_permissions.manage_guild:
         return
     if blacklisted_users:
@@ -328,6 +346,7 @@ async def getblacklist(ctx):
 @bot.command()
 async def setprefix(ctx, prefix: str):
     """Changes the prefix of the bot."""
+
     if not ctx.author.guild_permissions.manage_guild:
         return
     bot.command_prefix = prefix
@@ -337,6 +356,7 @@ async def setprefix(ctx, prefix: str):
 @bot.event
 async def on_ready():
     """Prints important bot information and sets up background tasks. Converts ids."""
+
     print('Logged in as')
     print(bot.user.name)
     print(bot.user.id)
@@ -348,6 +368,7 @@ async def on_ready():
 
 def write_data():
     """Writes the blacklist to a JSON file using the member's ids."""
+
     with open("blacklist.json", mode="w") as f:
         for i in range(len(blacklisted_users)):
             blacklisted_users[i] = blacklisted_users[i].id
@@ -376,8 +397,8 @@ def load_data():
 
 def convert_ids():
     """Converts all ids of the server from the blacklist by using the GUILD_ID constant."""
-    global blacklisted_users
 
+    global blacklisted_users
     print("Converting ids")
     for i in range(len(blacklisted_users)):
         blacklisted_users[i] = bot.get_guild(GUILD_ID).get_member(blacklisted_users[i])
