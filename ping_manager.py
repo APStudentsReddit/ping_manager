@@ -26,7 +26,7 @@ users_to_remind = []
 AMBIGUOUS = "Ambiguous role"
 HELPER_SUFFIX = " Helper"
 
-TIMEOUT_TIME = 60
+TIMEOUT_TIME = 3600
 
 HELPER_ROLES = \
     {
