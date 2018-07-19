@@ -407,7 +407,9 @@ def convert_ids():
 
 @asyncio.coroutine
 def main_task():
-    yield from bot.login("NDY3NjQzNTg1NTU1MjAyMDQ5.DjIXwA.dVw7uKkQ84nzCDhEOKxdzwuZLSE")
+    with open("token.txt", mode="r") as f:
+        token = f.read()
+    yield from bot.login(token)
     yield from bot.connect()
 
 
