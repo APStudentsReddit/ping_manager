@@ -161,8 +161,9 @@ async def on_message(message):
     None
     """
 
-    if message.guild.id != GUILD_ID:    # Prevent anyone from accessing the blacklist from another server.
-        return
+    if message.guild:
+        if message.guild.id != GUILD_ID:    # Prevent anyone from accessing the blacklist from another server.
+            return
 
     message.content = message.content.lower()
     await bot.process_commands(message)
