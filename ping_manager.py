@@ -68,12 +68,12 @@ AMBIGUOUS_ROLES = {
 
 TIMEOUT_TIME = 3600
 
-HELP_MESSAGE = """To ping helpers, use ```{0}ping <helper name>```
+HELP_MESSAGE = """To ping helpers, use ```{0}ping <helper alias>```
 Be careful when using this command! 
 It will ping all helpers of that role, and you will not be able to ping again for """ + str(TIMEOUT_TIME) + """ seconds.
 
-To check how much longer until you can ping a helper use ```{0}notify time```
-To request to receive a reminder when you can once again ping a helper use ```{0}notify remind```
+To check how much longer until you can ping a helper use ```{0}time```
+To request to receive a reminder DM when you can once again ping a helper use ```{0}remind```
 
 In order to ping a role, you must use one that role's aliases. 
 To find the aliases for all the roles use : ```{0}alias```
@@ -109,7 +109,7 @@ def convert_alias(alias):
 
     Parameters
     ----------
-    s : str
+    alias : str
         An alias for the wanted helper name.
 
     Returns
@@ -146,6 +146,9 @@ async def on_message(message):
     """
     Handles and interprets all messages sent by the discord and determines if they are commands.
 
+    Only accepts messages from a specific guild id because it's meant to only run on one server.
+    This is hopefully to prevent any manipulation of the blacklist from other servers.
+
     Parameters
     ----------
     message : Message
@@ -154,31 +157,6 @@ async def on_message(message):
     Returns
     -------
     None
-
-    Notes
-    -----
-    Commands include:
-        !help
-            Privately messages the user our help message.
-        !alias
-            Privately messages the user our alias message.
-        !notify time
-            DM's the user how much longer they must wait to ping again.
-        !notify remind
-            DM's the user when their ping is ready.
-        !ping <subject_alias>
-            When this is called, the member must confirm if they are sure that they want to ping and must respond "Y".
-            If the member confirms it, this will ping all Helpers of the requested subject.
-
-        Mod only (must have Manage Server):
-            !blacklist  <@member>
-                Blacklists a member from using pings.
-            !unblacklist <@member>
-                Removes a member from the blacklist.
-            !getblacklist
-                DM's the user all members that are blacklisted.
-            !setprefix <new_prefix>
-                Changes the prefix for new commands.
     """
 
     if message.guild.id != GUILD_ID:    # Prevent anyone from accessing the blacklist from another server.
@@ -190,6 +168,7 @@ async def on_message(message):
 
 @bot.command()
 async def help(ctx):
+    """DMs bot description and help for the requester."""
     await ctx.author.send(bot.description)
     await ctx.author.send(HELP_MESSAGE.format(bot.command_prefix))
     await ctx.message.delete()
@@ -197,12 +176,35 @@ async def help(ctx):
 
 @bot.command()
 async def alias(ctx):
+    """DMs helper aliases to the requester."""
     await ctx.author.send(ALIAS_MESSAGE)
     await ctx.message.delete()
 
 
 @bot.command()
-async def ping(ctx, *, role):
+async def ping(ctx, *, alias: str):
+    """
+    Pings a helper role after some confirmation and puts the user on cooldown.
+
+    In order for a member to ping, they must:
+        1. Not be on the blacklist.
+        2. Not be on timeout.
+        3. Refer clearly to an alias.
+        4. Confirm that they are going to ping all helpers.
+    Also, the bot will delete several messages if the ping is confirmed to reduce channel spam.
+
+    Parameters
+    ----------
+    ctx : Context
+        Context of the message.
+    alias : str
+        An alias for a helper role.
+
+    Returns
+    -------
+    None
+    """
+
     if ctx.author in blacklisted_users:
         await ctx.send("Sorry, but you are blacklisted from pinging helpers.", delete_after=60)
         return
@@ -213,7 +215,7 @@ async def ping(ctx, *, role):
                        .format(ctx.author.name, time_left // 60, time_left - time_left // 60), delete_after=60)
         return
 
-    helper_role = convert_alias(role)
+    helper_role = convert_alias(alias)
 
     if helper_role is None:
         await ctx.send("Sorry {0}, invalid alias.".format(ctx.author.name), delete_after=60)
@@ -222,7 +224,7 @@ async def ping(ctx, *, role):
     if helper_role == AMBIGUOUS:
         ambiguous_role_response = "There are multiple helper roles that you could be referring to with." \
                                   "  Please specify by using one of the below roles and try again.\n```\n"
-        for r in AMBIGUOUS_ROLES[role]:
+        for r in AMBIGUOUS_ROLES[alias]:
             ambiguous_role_response += "\n* " + r + ": " + ", ".join(HELPER_ROLES[r]) + "\n"
         ambiguous_role_response += "```"
 
@@ -240,6 +242,7 @@ async def ping(ctx, *, role):
                                   .format(ctx.author.name, helper_role))
 
     def ping_check(message):
+        """Determines if the confirmation is a valid response."""
         if message.author == ctx.author and message.guild == ctx.guild:
             if message.content.lower() in YES or message.content.lower() in NO:
                 return True
@@ -274,6 +277,7 @@ async def ping(ctx, *, role):
 
 @bot.command()
 async def time(ctx):
+    """Tells the member how much time they have left before being able to ping again."""
     time_left = users_on_timeout[ctx.author]  # In seconds
     await ctx.send("Sorry {0}, but you still have to wait {1} minutes and {2} seconds"
                    .format(ctx.author.name, time_left // 60, time_left - time_left // 60), delete_after=60)
@@ -281,12 +285,14 @@ async def time(ctx):
 
 @bot.command()
 async def remind(ctx):
+    """Informs the member that they will be DMed when they are allowed to ping again."""
     users_to_remind.append(ctx.author)
     await ctx.send("{0}, you will receive a DM when you are allowed to ping again.".format(ctx.author.name))
 
 
 @bot.command()
 async def blacklist(ctx, member: discord.Member):
+    """Adds a member to the blacklist."""
     if not ctx.author.guild_permissions.manage_guild:
         return
     blacklisted_users.append(member)
@@ -295,6 +301,7 @@ async def blacklist(ctx, member: discord.Member):
 
 @bot.command()
 async def unblacklist(ctx, member: discord.Member):
+    """Removes a member from the blacklist."""
     if not ctx.author.guild_permissions.manage_guild:
         return
     if member in blacklisted_users:
@@ -304,6 +311,7 @@ async def unblacklist(ctx, member: discord.Member):
 
 @bot.command()
 async def getblacklist(ctx):
+    """Sends the blacklist by converting the members to their names."""
     if not ctx.author.guild_permissions.manage_guild:
         return
     if blacklisted_users:
@@ -314,6 +322,7 @@ async def getblacklist(ctx):
 
 @bot.command()
 async def setprefix(ctx, prefix: str):
+    """Changes the prefix of the bot."""
     if not ctx.author.guild_permissions.manage_guild:
         return
     bot.command_prefix = prefix
@@ -322,7 +331,7 @@ async def setprefix(ctx, prefix: str):
 
 @bot.event
 async def on_ready():
-    """Prints important bot information and sets up background tasks."""
+    """Prints important bot information and sets up background tasks. Converts ids."""
     print('Logged in as')
     print(bot.user.name)
     print(bot.user.id)
@@ -333,6 +342,7 @@ async def on_ready():
 
 
 def write_data():
+    """Writes the blacklist to a JSON file using the member's ids."""
     with open("blacklist.json", mode="w") as f:
         for i in range(len(blacklisted_users)):
             blacklisted_users[i] = blacklisted_users[i].id
@@ -341,6 +351,7 @@ def write_data():
 
 
 def load_data():
+    """Reads the ids from the blacklist from the JSON file"""
     global blacklisted_users
     print("Loading data...")
     with open("blacklist.json", mode="r") as f:
@@ -354,6 +365,7 @@ def load_data():
 
 
 def convert_ids():
+    """Converts all ids of the server from the blacklist by using the GUILD_ID constant."""
     global blacklisted_users
     print("Converting ids")
     for i in range(len(blacklisted_users)):
