@@ -9,9 +9,9 @@ This was written to allow students to easily ping the AP Helpers while also prev
 * !ping |alias|
     * Pings all helpers of a subject. Helper aliases can be found in the !alias command.
     * Asks for confirmation of the pinger before pinging.
-* !notify time
+* !time
     * DM's how much time is left before being able to ping a Helper.
-* !notify remind
+* !remind
     * DM's after the Helper ping cooldown time is over.
 * !help
     * DM's these commands and ping cooldown time.
@@ -19,7 +19,7 @@ This was written to allow students to easily ping the AP Helpers while also prev
     * DM's all aliases for the Helper roles.
 
     #### Mod commands
-    To use these commands, the user must have the Manage Servers permission.
+    To use these commands, the user must have the Manage Guilds permission.
     * !blacklist |@member|
         * Bans a member from using the ping command.
     * !unblacklist |@member|
