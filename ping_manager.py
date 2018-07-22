@@ -96,7 +96,7 @@ COMMAND_TABLE = \
     |   unblacklist <user> |   Unbans user             |   Moderator       |
     |   getblacklist       |   Lists names of banned   |   Moderator       |
     |   setprefix <prefix> |   Sets bot prefix         |   Moderator       |
-    |   settimeout <time>  |   Sets bot timeout        |   Moderator       |
+    |   settimeout <time>  |   Sets bot timeout (sec)  |   Moderator       |
     |   resetuser <user>   |   Resets user's cooldown  |   Moderator       |
     |   addalias           |   Adds an alias           |   Moderator       |
     |   removealias        |   Removes an alias        |   Moderator       |
@@ -673,7 +673,7 @@ async def settimeout(ctx, seconds: int):
         return
     TIMEOUT_TIME = int(seconds)
     await ctx.send("{0} set the timeout length to {1} minutes and {2} seconds.".format(
-        ctx.author.name, int(time) // 60, int(time) % 60))
+        ctx.author.name, seconds // 60, seconds % 60))
     await ctx.message.delete()
 
 
