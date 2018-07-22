@@ -393,8 +393,6 @@ async def time(ctx):
                        .format(ctx.author.name, time_left // 60, time_left % 60), delete_after=60)
     except KeyError:
         await ctx.send("{0}, you are currently allowed to ping a helper.".format(ctx.author.name), delete_after=60)
-    for _ in range(60):
-        await asyncio.sleep(1)
     await ctx.message.delete()
 
 
@@ -411,8 +409,6 @@ async def remind(ctx):
     users_to_remind.append(ctx.author)
     await ctx.send("{0}, you will receive a DM when you are allowed to ping again.".format(ctx.author.name),
                    delete_after=60)
-    for _ in range(60):
-        await asyncio.sleep(1)
     await ctx.message.delete()
 
 
@@ -426,7 +422,8 @@ async def blacklist(ctx, member: discord.Member):
         blacklisted_users.append(member)
         await ctx.send("{0} has been blacklisted by {1}.".format(member.name, ctx.author.name))
     else:
-        await ctx.send("{0} was already blacklisted".format(member.name))
+        await ctx.send("{0}, {1} was already blacklisted".format(ctx.author.name, member.name))
+    await ctx.message.delete()
 
 
 @bot.command()
@@ -438,6 +435,7 @@ async def unblacklist(ctx, member: discord.Member):
     if member in blacklisted_users:
         del blacklisted_users[blacklisted_users.index(member)]
         await ctx.send("{0} was unblacklisted by {1}.".format(member.name, ctx.author.name))
+    await ctx.message.delete()
 
 
 @bot.command()
@@ -447,11 +445,12 @@ async def getblacklist(ctx):
     if not ctx.author.guild_permissions.manage_guild:
         return
     if blacklisted_users:
-        for message in split_message("Blacklisted members are: " + ", ".join(
-                list(map(lambda x: x.name, blacklisted_users)))):
+        for message in split_message("{0}, blacklisted members are: " + ", ".join(
+                list(map(lambda x: x.name, blacklisted_users))).format(ctx.author.name)):
             await ctx.send(message)
     else:
-        await ctx.send("No members are blacklisted.")
+        await ctx.send("{0}, no members are blacklisted.".format(ctx.author.name))
+    await ctx.message.delete()
 
 
 @bot.command()
@@ -462,7 +461,7 @@ async def addalias(ctx):
         return
 
     helper_message = "Please choose the number of the helper role you want to add to:\n" \
-                     "To cancel, type 'cancel'\n"
+                     "To cancel, type 'cancel'\n\n"
     for i, alias in enumerate(helper_roles.keys()):
         helper_message += "{0}: {1}\n".format(i+1, alias)
 
@@ -500,10 +499,11 @@ async def addalias(ctx):
         return
 
     helper_name = list(helper_roles.keys())[helper_number]
-    alias_prompt = await ctx.send("Now enter your alias name:")
+    alias_prompt = await ctx.send("Now enter your alias name:\n"
+                                  "To cancel, type 'cancel'")
 
     def author_check(message):
-        """Checks whether the message is by the original requestor."""
+        """Checks whether the message is by the original requester."""
         if message.author == ctx.author and message.channel == ctx.channel:
             return True
         return False
@@ -518,9 +518,14 @@ async def addalias(ctx):
         await alias_prompt.delete()
         return
 
-    helper_roles[helper_name].append(new_alias.content)
-    await ctx.send("The alias {0} has been added to the {1} Helper aliases.".format(
-        new_alias.content, helper_name))
+    if new_alias.content not in helper_roles[helper_name]:
+        helper_roles[helper_name].append(new_alias.content)
+        await ctx.send("The alias {0} has been added to the {1} Helper aliases by {2}.".format(
+            new_alias.content, helper_name, ctx.author.name))
+    else:
+        await ctx.send("{0}, the alias {1} was already in {2} Helper aliases".format(
+            ctx.author.name, new_alias.content, helper_name))
+
     await ctx.message.delete()
     await helper_prompt.delete()
     await helper_choice.delete()
@@ -575,7 +580,8 @@ async def removealias(ctx):
 
     helper_name = list(helper_roles.keys())[helper_number]
 
-    alias_message = "Now select the number of the alias you want to remove:\n"
+    alias_message = "Now select the number of the alias you want to remove:\n" \
+                    "To cancel, type 'cancel'\n\n"
     for i, alias in enumerate(helper_roles[helper_name]):
         alias_message += "{0}: {1}\n".format(i + 1, alias)
 
@@ -617,9 +623,13 @@ async def removealias(ctx):
 
     alias_name = helper_roles[helper_name][alias_number]
 
-    del helper_roles[helper_name][alias_number]
-    await ctx.send("The alias {0} has been removed from the {1} Helper aliases.".format(
-        alias_name, helper_name))
+    if alias_name in helper_roles[helper_name]:
+        del helper_roles[helper_name][alias_number]
+        await ctx.send("The alias {0} has been removed from the {1} Helper aliases by {2}.".format(
+            alias_name, helper_name, ctx.author.name))
+    else:
+        await ctx.send("{0}, the alias {1} was not in the {2} Helper aliases.".format(
+            ctx.author.name, alias_name, helper_name))
 
     await ctx.message.delete()
     await helper_prompt.delete()
@@ -636,9 +646,10 @@ async def resetuser(ctx, member: discord.Member):
         return
     if member in users_on_timeout:
         del users_on_timeout[member]
-        await ctx.send("{0} can now ping a helper.".format(member.name))
+        await ctx.send("{0} can now ping a helper (reset by {1}).".format(member.name, ctx.author.name))
     else:
-        await ctx.send("{0} can already ping helpers.".format(member.name))
+        await ctx.send("{0} can already ping helpers (reset by {1}).".format(member.name, ctx.author.name))
+    await ctx.message.delete()
 
 
 @bot.command()
@@ -648,7 +659,8 @@ async def setprefix(ctx, prefix: str):
     if not ctx.author.guild_permissions.manage_guild:
         return
     bot.command_prefix = prefix
-    await ctx.send("Bot prefix set to " + prefix)
+    await ctx.send("{0} set the bot prefix set to {1}".format(ctx.author.name, prefix))
+    await ctx.message.delete()
 
 
 @bot.event
