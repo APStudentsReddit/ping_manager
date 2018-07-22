@@ -287,7 +287,7 @@ async def time(ctx):
     try:
         time_left = users_on_timeout[ctx.author]  # In seconds
         await ctx.send("{0}, you still have to wait {1} minutes and {2} seconds"
-                   .format(ctx.author.name, time_left // 60, time_left - time_left // 60), delete_after=60)
+                       .format(ctx.author.name, time_left // 60, time_left % 60), delete_after=60)
     except KeyError:
         await ctx.send("{0}, you are currently allowed to ping a helper.".format(ctx.author.name), delete_after=60)
 
