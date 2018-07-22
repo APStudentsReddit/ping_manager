@@ -15,6 +15,7 @@ This was written using discord.py rewrite.
 GUILD_ID = 467170920155316235     # Currently set to Bot Testing
 KEY_ALIASES = "aliases"
 KEY_PREFIX = "prefix"
+TIMEOUT_PREFIX = "timout_length"
 
 bot = commands.Bot(description=DESCRIPTION, command_prefix="!")
 bot.remove_command("help")
@@ -70,6 +71,7 @@ To completely blacklist a user from pinging helpers use: `{0}blacklist <user's m
 To unblacklist a user from pinging helpers use: `{0}unblacklist <user's mention>`
 To get all members who are blacklisted, use: `{0}getblacklist`
 To change the prefix of commands on your server use: `{0}setprefix <new_prefix>`
+To change the length of the timeout on your server use: `{0}settimeout <new timeout in seconds>`
 To reset a user's timeout and allowing to ping a helper use: `{0}resetuser <user's mention>`
 To add an alias to a helper role use: `{0}addalias`
 To remove an alias from a helper role use: `{0}removealias`
@@ -96,6 +98,7 @@ COMMAND_TABLE = \
     |   unblacklist <user> |   Unbans user             |   Moderator       |
     |   getblacklist       |   Lists names of banned   |   Moderator       |
     |   setprefix <prefix> |   Sets bot prefix         |   Moderator       |
+    |   settimeout <time>  |   Sets bot timeout        |   Moderator       |
     |   resetuser <user>   |   Resets user's cooldown  |   Moderator       |
     |   addalias           |   Adds an alias           |   Moderator       |
     |   removealias        |   Removes an alias        |   Moderator       |
@@ -661,6 +664,19 @@ async def setprefix(ctx, prefix: str):
     await ctx.send("{0} set the bot prefix set to {1}".format(ctx.author.name, prefix))
     await ctx.message.delete()
 
+@bot.command()
+async def settimeout(ctx, time: str):
+    """Allow moderators to set the length of the timeout."""
+
+    global TIMEOUT_TIME
+
+    if not ctx.author.guild_permissions.manage_guild:
+        return
+    try: 
+        TIMEOUT_TIME = int(time)
+        await ctx.send("{0} set the timeout length to {1} minutes and {2} seconds.".format(ctx.author.name, int(time) // 60, int(time) % 60))
+    except ValueError:
+        await ctx.send("{0}, '{1}' is not a valid time.".format(ctx.author.name, time))
 
 @bot.event
 async def on_ready():
@@ -686,9 +702,10 @@ def write_data():
 
     with open("aliases.json", mode="w", encoding="UTF-8") as f:
         var_dict = {KEY_PREFIX: bot.command_prefix,
+                    TIMEOUT_PREFIX: TIMEOUT_TIME,
                     KEY_ALIASES: helper_roles}
         f.write(json.dumps(var_dict))
-        print("Aliases and command prefix saved!")
+        print("Aliases, command prefix, and timeout length saved!")
 
 
 def load_data():
@@ -696,6 +713,7 @@ def load_data():
 
     global blacklisted_users
     global helper_roles
+    global TIMEOUT_TIME
 
     with open("aliases.json", mode="r", encoding="UTF-8") as f:
         print("Loading aliases...")
@@ -703,6 +721,7 @@ def load_data():
             var_dict = json.loads(f.read())
             bot.command_prefix = var_dict[KEY_PREFIX]
             helper_roles = var_dict[KEY_ALIASES]
+            TIMEOUT_TIME = var_dict[TIMEOUT_PREFIX]
         except JSONDecodeError:
             print("Aliases failed to load.")
             raise

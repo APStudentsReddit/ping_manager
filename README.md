@@ -28,6 +28,8 @@ This was written to allow students to easily ping the AP Helpers while also prev
         * Direct messages a list of all blacklisted members.
     * !setprefix |prefix|
         * Allows a mod to set the prefix to anything.
+    * !settimeout |time in seconds|
+        * Allows a mod to change the lenght of the timeout.
     * !resetuser |@member|
         * Reset a user's timeout.
     * !addalias
