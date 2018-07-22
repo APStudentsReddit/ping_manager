@@ -21,7 +21,7 @@ bot.remove_command("help")
 
 blacklisted_users = []
 users_on_timeout = {}
-users_with_active_requests = {}
+users_on_confirmation = []
 users_to_remind = []
 
 AMBIGUOUS = "Ambiguous role"
@@ -40,7 +40,7 @@ HELPER_ROLES = \
         "Chinese": ["ap chinese", "chinese", "中文"],
         "Comp. Government": ["comparative government", "comp gov", "comp. gov", "gov comp"],
         "Computer Science Principles": ["ap computer science principles", "ap csp", "csp", "computer principles",
-                                        "computer science principles"],
+                                        "computer science principles", "comp sci principles"],
         "Environmental Science": ["apes", "environmental science", "ap es", "ap e.s"],
         "European History": ["ap euro", "euro", "ap european history", "european history"],
         "French": ["ap french", "french", "francais", "français"],
@@ -71,13 +71,16 @@ HELPER_ROLES = \
     }
 
 DISABLED_ROLES = {
-                    "Calculus": ["calculus", "ap calc", "calc ab", "calc bc", "calc", "ab calc", "bc calc", "calculus bc", "calculus ab"],
-                    "Computer Science": ["ap computer science", "ap computer science helper", "ap csa", "computer science", "computer scienceh helper", "ap cs"]
+                    "Calculus": ["calculus", "ap calc", "calc ab", "calc bc", "calc", "ab calc",
+                                 "bc calc", "calculus bc", "calculus ab"],
+                    "Computer Science": ["ap computer science", "ap computer science helper",
+                                         "ap csa", "computer science a", "comp sci a", "csa"]
                 }
 
 AMBIGUOUS_ROLES = {
                     "physics": ["Physics 1", "Physics 2", "Physics C Mech", "Physics C E/M"],
                     # "spanish": ["Spanish Language", "Spanish Literature"],
+                    # "comp sci": ["Computer Science", "Computer Science Principles"]
                     "economics": ["Macroeconomics", "Microeconomics"],
                     "econ": ["Macroeconomics", "Microeconomics"],
                     "art": ["Art History", "Studio Art"],
@@ -162,6 +165,7 @@ async def on_message(message):
 
     Only accepts messages from a specific guild id because it's meant to only run on one server.
     This is hopefully to prevent any manipulation of the blacklist from other servers.
+    Also makes commands case insensitive.
 
     Parameters
     ----------
@@ -225,6 +229,10 @@ async def ping(ctx, *, alias: str):
     if ctx.author in blacklisted_users:
         await ctx.send("Sorry, but you are blacklisted from pinging helpers.", delete_after=60)
         return
+    # Check to see if there already is a helper request active for this user. If there is, ignore the request.
+    if ctx.author in users_on_confirmation:
+        await ctx.send("Please confirm and cancel your current request before pinging again.")
+        return
 
     if ctx.author in users_on_timeout and not ctx.author.guild_permissions.manage_guild:
         time_left = users_on_timeout[ctx.author]    # In seconds
@@ -249,19 +257,11 @@ async def ping(ctx, *, alias: str):
         return
 
     if helper_role == DISABLED:
-        disabled_role_response = "Sorry, but that helper role has been disabled at the request of the moderators" \
-                                 " because its channel has a very active community and plenty of active helpers."
+        disabled_role_response = "Sorry, but that helper role has been disabled at the request of the moderators."
         await ctx.send(ctx.author.name + ", " + disabled_role_response, delete_after=60)
         return
 
-
     # We may now assume helper_role is verified.
-
-    # Check to see if there already is a helper request active for this user. If there is, delete the old request.
-    if ctx.author in users_with_active_requests:
-        await users_with_active_requests[ctx.author][0].delete()
-        await users_with_active_requests[ctx.author][1].delete()
-
     confirm_ping = await ctx.send("{0}, You are about to ping all the {1}s on this server. " 
                                   "Please make sure you have clearly elaborated your question and/or shown all work. \n"
                                   "If you have done so, react with ✅ in the next 30 seconds. \n"
@@ -269,8 +269,8 @@ async def ping(ctx, *, alias: str):
                                   "After 30 seconds, this message will be deleted and your request will be canceled."
                                   .format(ctx.author.name, helper_role))
     
-    # Add the new requet to the list of requests.
-    users_with_active_requests[ctx.author] = [confirm_ping, ctx.message]
+    # Add the new request to the list of requests.
+    users_on_confirmation.append(ctx.author)
 
     # Add the two options for reacts to make it easier for the user to click their choice.
     await confirm_ping.add_reaction("✅")
@@ -289,34 +289,32 @@ async def ping(ctx, *, alias: str):
         await ctx.send("Timed out!", delete_after=10)
         await confirm_ping.delete()
         await ctx.message.delete()
-        del users_with_active_requests[ctx.author]
+        del users_on_confirmation[users_on_confirmation.index(ctx.author)]
         return
 
     # Check to make sure that the reactio was in response to the correct helper request.
-    if ctx.author in users_with_active_requests and users_with_active_requests[ctx.author][1] == ctx.message:
+#    if ctx.author in users_on_confirmation and users_on_confirmation[ctx.author][1] == ctx.message:
 
-        if str(user_confirm[0].emoji) == "❌":
-            await ctx.send("Canceling request...", delete_after=10)
-            await confirm_ping.delete()
-            await user_confirm.delete()
-            await ctx.message.delete()
-            del users_with_active_requests[ctx.author]
-            return
-
-        # Member answered Yes
-        actual_role = discord.utils.get(ctx.guild.roles, name=helper_role)
-        await actual_role.edit(mentionable=True)
-        await ctx.send("Ping requested by {0} for {1}".format(ctx.author.mention, actual_role.mention))
-        await actual_role.edit(mentionable=False)
-
-        if not ctx.author.guild_permissions.manage_guild:
-            users_on_timeout[ctx.author] = TIMEOUT_TIME
-
-        del users_with_active_requests[ctx.author]
-
+    if str(user_confirm[0].emoji) == "❌":
+        await ctx.send("Canceling request...", delete_after=10)
         await confirm_ping.delete()
-        await user_confirm.delete()
         await ctx.message.delete()
+        del users_on_confirmation[users_on_confirmation.index(ctx.author)]
+        return
+
+    # Member answered Yes
+    actual_role = discord.utils.get(ctx.guild.roles, name=helper_role)
+    await actual_role.edit(mentionable=True)
+    await ctx.send("Ping requested by {0} for {1}".format(ctx.author.mention, actual_role.mention))
+    await actual_role.edit(mentionable=False)
+
+    if not ctx.author.guild_permissions.manage_guild:
+        users_on_timeout[ctx.author] = TIMEOUT_TIME
+
+    del users_on_confirmation[users_on_confirmation.index(ctx.author)]
+
+    await confirm_ping.delete()
+    await ctx.message.delete()
 
 
 @bot.command()
@@ -381,6 +379,7 @@ async def getblacklist(ctx):
     else:
         await ctx.send("No members are blacklisted.")
 
+
 @bot.command()
 async def resetuser(ctx, member: discord.Member):
     """Reset a user's current timeout, allowing them to ping a helper."""
@@ -389,9 +388,9 @@ async def resetuser(ctx, member: discord.Member):
         return
     if member in users_on_timeout:
         users_on_timeout[member] = 0
-        await ctx.send("{0} 's timeout has been reset and they can now ping a helper.".format(member.name), delete_after=60)
+        await ctx.send("{0} can now ping a helper.".format(member.name), delete_after=60)
     else:
-        await ctx.send("{0} can already ping helpers.".format(member.name), delete_after=30)
+        await ctx.send("{0} can already ping helpers.".format(member.name), delete_after=60)
 
 
 @bot.command()
