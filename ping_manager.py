@@ -82,27 +82,26 @@ If you wish, you may refer to the command table below.
 
 COMMAND_TABLE = \
     """```
-    _________________________________________________________________________
-    |   Command             |       Description         |   Access Level    |
-    |-----------------------+---------------------------+-------------------|
-    |   !ping <alias>       |   Pings a helper          |   Everyone        |
-    |   !time               |   Sends cooldown time     |   Everyone        |
-    |   !remind             |   Reminds when can ping   |   Everyone        |
-    |-----------------------+---------------------------+-------------------|
-    |   !aliases            |   Shows all aliases       |   Everyone        |
-    |   !help               |   Shows this              |   Everyone        |
-    |-----------------------+---------------------------+-------------------|
-    |   !blacklist <user>   |   Bans user from pinging  |   Moderator       |
-    |   !unblacklist <user> |   Unbans user             |   Moderator       |
-    |   !getblacklist       |   Lists names of banned   |   Moderator       |
-    |   !setprefix <prefix> |   Sets bot prefix         |   Moderator       |
-    |   !resetuser <user>   |   Resets user's cooldown  |   Moderator       |
-    |   !addalias           |   Adds an alias           |   Moderator       |
-    |   !removealias        |   Removes an alias        |   Moderator       |
-    |_______________________|___________________________|___________________|
-    Cooldown Time: """ + str(TIMEOUT_TIME // 60) + """ minutes
-    Current prefix: """ + str(bot.command_prefix) + """```
-    """
+    ________________________________________________________________________
+    |   Command            |       Description         |   Access Level    |
+    |----------------------+---------------------------+-------------------|
+    |   ping <alias>       |   Pings a helper          |   Everyone        |
+    |   time               |   Sends cooldown time     |   Everyone        |
+    |   remind             |   Reminds when can ping   |   Everyone        |
+    |----------------------+---------------------------+-------------------|
+    |   aliases            |   Shows all aliases       |   Everyone        |
+    |   help               |   Shows this              |   Everyone        |
+    |----------------------+---------------------------+-------------------|
+    |   blacklist <user>   |   Bans user from pinging  |   Moderator       |
+    |   unblacklist <user> |   Unbans user             |   Moderator       |
+    |   getblacklist       |   Lists names of banned   |   Moderator       |
+    |   setprefix <prefix> |   Sets bot prefix         |   Moderator       |
+    |   resetuser <user>   |   Resets user's cooldown  |   Moderator       |
+    |   addalias           |   Adds an alias           |   Moderator       |
+    |   removealias        |   Removes an alias        |   Moderator       |
+    |______________________|___________________________|___________________|
+    Cooldown Time: {0} minutes
+    Current prefix: {1}```"""
 
 
 def convert_alias(alias):
@@ -233,7 +232,7 @@ async def help(ctx):
 
     await ctx.author.send(bot.description)
     await ctx.author.send("\n\n" + HELP_MESSAGE.format(bot.command_prefix))
-    await ctx.author.send("\n" + COMMAND_TABLE)
+    await ctx.author.send("\n" + COMMAND_TABLE.format(TIMEOUT_TIME, bot.command_prefix))
     await ctx.message.delete()
 
 
