@@ -94,6 +94,7 @@ To completely blacklist a user from pinging helpers use: ```{0}blacklist <user's
 To unblacklist a user from pinging helpers use: ```{0}unblacklist <user's mention>```
 To get all members who are blacklisted, use: ```{0}getblacklist```
 To change the prefix of commands on your server use: ```{0}setprefix <new_prefix>```
+To reset a user's timeout and allowing to ping a helper use: ```{0}resetuser <user's mention>```
 
 **NOTE:** At the request of bork, Computer Science A, Home Economics, and Calculus Helpers will not receive any pings.
 Do not try to ping these roles; it will not work."""
@@ -361,6 +362,18 @@ async def getblacklist(ctx):
         await ctx.send("Blacklisted members are: " + ", ".join(list(map(lambda x: x.name, blacklisted_users))))
     else:
         await ctx.send("No members are blacklisted.")
+
+@bot.command()
+async def resetuser(ctx, member: discord.Member):
+    """Reset a user's current timeout, allowing them to ping a helper."""
+
+    if not ctx.author.guild_permissions.manage_guild:
+        return
+    if member in users_on_timeout:
+        users_on_timeout[member] = 0
+        await ctx.send("{0} 's timeout has been reset and they can now ping a helper.".format(member.name))
+    else:
+        await ctx.send("{0} can already ping helpers.".format(member.name))
 
 
 @bot.command()
