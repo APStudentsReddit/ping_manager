@@ -25,6 +25,8 @@ users_with_active_requests = {}
 users_to_remind = []
 
 AMBIGUOUS = "Ambiguous role"
+DISABLED = "Disabled role"
+
 HELPER_SUFFIX = " Helper"
 
 TIMEOUT_TIME = 3600
@@ -67,6 +69,11 @@ HELPER_ROLES = \
         "U.S History": ["apush", "united states", "us history", "u.s history", "ap u.s history"],
         "World History": ["apwh", "ap world history", "world history", "world", "ap wh", "whap"]
     }
+
+DISABLED_ROLES = {
+                    "Calculus": ["calculus", "ap calc", "calc ab", "calc bc", "calc", "ab calc", "bc calc", "calculus bc", "calculus ab"],
+                    "Computer Science": ["ap computer science", "ap computer science helper", "ap csa", "computer science", "computer scienceh helper", "ap cs"]
+                }
 
 AMBIGUOUS_ROLES = {
                     "physics": ["Physics 1", "Physics 2", "Physics C Mech", "Physics C E/M"],
@@ -118,7 +125,7 @@ def convert_alias(alias):
     Returns
     -------
     str
-        The helper name, "ambiguous role", or "" (if none are found).
+        The helper name, "ambiguous role", "disabled role", or "" (if none are found).
     """
 
     for role in HELPER_ROLES:
@@ -126,6 +133,9 @@ def convert_alias(alias):
             return role + HELPER_SUFFIX
     if alias in AMBIGUOUS_ROLES:
         return AMBIGUOUS
+    for role in DISABLED_ROLES:
+        if alias in DISABLED_ROLES[role]:
+            return DISABLED
     return None
 
 
@@ -237,6 +247,13 @@ async def ping(ctx, *, alias: str):
 
         await ctx.send(ctx.author.name + ", " + ambiguous_role_response, delete_after=60)
         return
+
+    if helper_role == DISABLED:
+        disabled_role_response = "Sorry, but that helper role has been disabled at the request of the moderators" \
+                                 " because its channel has a very active community and plenty of active helpers."
+        await ctx.send(ctx.author.name + ", " + disabled_role_response, delete_after=60)
+        return
+
 
     # We may now assume helper_role is verified.
 
@@ -371,9 +388,9 @@ async def resetuser(ctx, member: discord.Member):
         return
     if member in users_on_timeout:
         users_on_timeout[member] = 0
-        await ctx.send("{0} 's timeout has been reset and they can now ping a helper.".format(member.name))
+        await ctx.send("{0} 's timeout has been reset and they can now ping a helper.".format(member.name), delete_after=60)
     else:
-        await ctx.send("{0} can already ping helpers.".format(member.name))
+        await ctx.send("{0} can already ping helpers.".format(member.name), delete_after=30)
 
 
 @bot.command()
