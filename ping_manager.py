@@ -15,11 +15,12 @@ This was written using discord.py rewrite.
 GUILD_ID = 467170920155316235     # Currently set to Bot Testing
 KEY_ALIASES = "aliases"
 KEY_PREFIX = "prefix"
-TIMEOUT_PREFIX = "timout_length"
+KEY_TIMEOUT = "timeout_length"
 
 bot = commands.Bot(description=DESCRIPTION, command_prefix="!")
 bot.remove_command("help")
 
+helper_roles = {}   # See load_data()
 blacklisted_users = []
 users_on_timeout = {}
 users_on_confirmation = []
@@ -27,12 +28,9 @@ users_to_remind = []
 
 AMBIGUOUS = "Ambiguous role"
 DISABLED = "Disabled role"
-
 HELPER_SUFFIX = " Helper"
 
 TIMEOUT_TIME = 3600
-
-helper_roles = {}   # See load_data()
 
 DISABLED_ROLES = {
                     "Calculus": ["calculus", "ap calc", "calc ab", "calc bc", "calc", "ab calc",
@@ -40,7 +38,7 @@ DISABLED_ROLES = {
                     "Computer Science": ["ap computer science", "ap computer science helper",
                                          "ap csa", "computer science a", "comp sci a", "csa"],
                     "Home Economics": ["home econ", "home economics", "ap home econ", "ap home economics"]
-                }
+                 }
 
 AMBIGUOUS_ROLES = {
                     "physics": ["Physics 1", "Physics 2", "Physics C Mech", "Physics C E/M"],
@@ -664,19 +662,20 @@ async def setprefix(ctx, prefix: str):
     await ctx.send("{0} set the bot prefix set to {1}".format(ctx.author.name, prefix))
     await ctx.message.delete()
 
+
 @bot.command()
-async def settimeout(ctx, time: str):
-    """Allow moderators to set the length of the timeout."""
+async def settimeout(ctx, seconds: int):
+    """Set the length of the timeout in seconds."""
 
     global TIMEOUT_TIME
 
     if not ctx.author.guild_permissions.manage_guild:
         return
-    try: 
-        TIMEOUT_TIME = int(time)
-        await ctx.send("{0} set the timeout length to {1} minutes and {2} seconds.".format(ctx.author.name, int(time) // 60, int(time) % 60))
-    except ValueError:
-        await ctx.send("{0}, '{1}' is not a valid time.".format(ctx.author.name, time))
+    TIMEOUT_TIME = int(seconds)
+    await ctx.send("{0} set the timeout length to {1} minutes and {2} seconds.".format(
+        ctx.author.name, int(time) // 60, int(time) % 60))
+    await ctx.message.delete()
+
 
 @bot.event
 async def on_ready():
@@ -702,7 +701,7 @@ def write_data():
 
     with open("aliases.json", mode="w", encoding="UTF-8") as f:
         var_dict = {KEY_PREFIX: bot.command_prefix,
-                    TIMEOUT_PREFIX: TIMEOUT_TIME,
+                    KEY_TIMEOUT: TIMEOUT_TIME,
                     KEY_ALIASES: helper_roles}
         f.write(json.dumps(var_dict))
         print("Aliases, command prefix, and timeout length saved!")
@@ -721,7 +720,7 @@ def load_data():
             var_dict = json.loads(f.read())
             bot.command_prefix = var_dict[KEY_PREFIX]
             helper_roles = var_dict[KEY_ALIASES]
-            TIMEOUT_TIME = var_dict[TIMEOUT_PREFIX]
+            TIMEOUT_TIME = var_dict[KEY_TIMEOUT]
         except JSONDecodeError:
             print("Aliases failed to load.")
             raise
