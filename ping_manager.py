@@ -13,7 +13,7 @@ This was written using discord.py rewrite.
 
 # This bot is only meant to be run on one server, so hardcoding this id seems fine (tell me if it isn't).
 GUILD_ID = 467170920155316235     # Currently set to Bot Testing
-KEY_BLACKLIST = "blacklist"
+KEY_ALIASES = "aliases"
 KEY_PREFIX = "prefix"
 
 bot = commands.Bot(description=DESCRIPTION, command_prefix="!")
@@ -31,13 +31,16 @@ HELPER_SUFFIX = " Helper"
 
 TIMEOUT_TIME = 3600
 
-HELPER_ROLES = {}
+HELPER_ROLES = {}   # See load_data()
+
+ALIAS_MESSAGE = "Alias for helpers:" + "\n"     # See load_data()
 
 DISABLED_ROLES = {
                     "Calculus": ["calculus", "ap calc", "calc ab", "calc bc", "calc", "ab calc",
                                  "bc calc", "calculus bc", "calculus ab"],
                     "Computer Science": ["ap computer science", "ap computer science helper",
-                                         "ap csa", "computer science a", "comp sci a", "csa"]
+                                         "ap csa", "computer science a", "comp sci a", "csa"],
+                    "Home Economics": ["home econ", "home economics", "ap home econ", "ap home economics"]
                 }
 
 AMBIGUOUS_ROLES = {
@@ -94,14 +97,9 @@ COMMAND_TABLE = \
     |   !setprefix <prefix> |   Sets bot prefix         |   Moderator       |
     |   !resetuser <user>   |   Resets user's cooldown  |   Moderator       |
     |_______________________|___________________________|___________________|
-    Cooldown Time: """ + str(TIMEOUT_TIME // 60) + """ minutes```
+    Cooldown Time: """ + str(TIMEOUT_TIME // 60) + """ minutes
+    Current prefix: """ + str(bot.command_prefix) + """```
     """
-
-
-ALIAS_MESSAGE = "Alias for helpers:" + "\n"
-for subject in HELPER_ROLES.keys():
-    ALIAS_MESSAGE += "* {0:<27}: {1}\n".format(subject, ", ".join(HELPER_ROLES[subject]))
-ALIAS_MESSAGE += "\n"
 
 
 def convert_alias(alias):
@@ -215,6 +213,13 @@ async def on_message(message):
         if message.guild.id != GUILD_ID:    # Prevent anyone from accessing the blacklist from another server.
             return
 
+    if message.author in blacklisted_users:     # Disable blacklisted from interacting with bot
+        return
+
+    if bot.user.mention in message.content:
+        await message.channel.send("My current prefix is {0}".format(bot.command_prefix))
+        return
+
     message.content = message.content.lower()
     await bot.process_commands(message)
 
@@ -229,7 +234,7 @@ async def help(ctx):
     await ctx.message.delete()
 
 
-@bot.command()
+@bot.command(aliases=["aliases"])
 async def alias(ctx):
     """DMs helper aliases to the requester."""
 
@@ -262,24 +267,37 @@ async def ping(ctx, *, alias: str):
     None
     """
 
-    if ctx.author in blacklisted_users:
-        await ctx.send("Sorry, but you are blacklisted from pinging helpers.", delete_after=60)
-        return
+    # See on_message for current implementation
+    # if ctx.author in blacklisted_users:
+    #     await ctx.send("Sorry, but you are blacklisted from pinging helpers.", delete_after=60)
+    #     for _ in range(60):
+    #         await asyncio.sleep(1)
+    #     await ctx.message.delete()
+    #     return
 
     if ctx.author in users_on_confirmation:
         await ctx.send("Please confirm and cancel your current request before pinging again.", delete_after=30)
+        for _ in range(30):
+            await asyncio.sleep(1)
+        await ctx.message.delete()
         return
 
     if ctx.author in users_on_timeout and not ctx.author.guild_permissions.manage_guild:
         time_left = users_on_timeout[ctx.author]    # In seconds
         await ctx.send("Sorry {0}, but you still have to wait {1} minutes and {2} seconds"
                        .format(ctx.author.name, time_left // 60, time_left % 60), delete_after=60)
+        for _ in range(60):
+            await asyncio.sleep(1)
+        await ctx.message.delete()
         return
 
     helper_role = convert_alias(alias)
 
     if helper_role is None:
         await ctx.send("Sorry {0}, invalid alias.".format(ctx.author.name), delete_after=60)
+        for _ in range(60):
+            await asyncio.sleep(1)
+        await ctx.message.delete()
         return
 
     if helper_role == AMBIGUOUS:
@@ -290,11 +308,17 @@ async def ping(ctx, *, alias: str):
         ambiguous_role_response += "```"
 
         await ctx.send(ctx.author.name + ", " + ambiguous_role_response, delete_after=60)
+        for _ in range(60):
+            await asyncio.sleep(1)
+        await ctx.message.delete()
         return
 
     if helper_role == DISABLED:
         disabled_role_response = "Sorry, but that helper role has been disabled at the request of the moderators."
         await ctx.send(ctx.author.name + ", " + disabled_role_response, delete_after=60)
+        for _ in range(60):
+            await asyncio.sleep(1)
+        await ctx.message.delete()
         return
 
     # We may now assume helper_role is verified.
@@ -312,15 +336,15 @@ async def ping(ctx, *, alias: str):
     await confirm_ping.add_reaction("✅")
     await confirm_ping.add_reaction("❌")
 
-    def ping_check(reaction, user):
+    def ping_check(react, member):
         """Determines if the confirmation is a valid response."""
-        if user == ctx.author:
-            if str(reaction.emoji) == "✅" or str(reaction.emoji) == "❌":
+        if member == ctx.author:
+            if str(react.emoji) == "✅" or str(react.emoji) == "❌":
                 return True
         return False
 
     try:
-        user_confirm = await bot.wait_for('reaction_add', timeout=30, check=ping_check)
+        reaction, user = await bot.wait_for('reaction_add', timeout=30, check=ping_check)
     except asyncio.TimeoutError:
         await ctx.send("Timed out!", delete_after=10)
         await confirm_ping.delete()
@@ -331,7 +355,7 @@ async def ping(ctx, *, alias: str):
     # Check to make sure that the reactio was in response to the correct helper request.
 #    if ctx.author in users_on_confirmation and users_on_confirmation[ctx.author][1] == ctx.message:
 
-    if str(user_confirm[0].emoji) == "❌":
+    if str(reaction.emoji) == "❌":
         await ctx.send("Canceling request...", delete_after=10)
         await confirm_ping.delete()
         await ctx.message.delete()
@@ -363,9 +387,12 @@ async def time(ctx):
                        .format(ctx.author.name, time_left // 60, time_left % 60), delete_after=60)
     except KeyError:
         await ctx.send("{0}, you are currently allowed to ping a helper.".format(ctx.author.name), delete_after=60)
+    for _ in range(60):
+        await asyncio.sleep(1)
+    await ctx.message.delete()
 
 
-@bot.command()
+@bot.command(aliases=["notify"])
 async def remind(ctx):
     """Informs the member that they will be DMed when they are allowed to ping again."""
 
@@ -378,6 +405,9 @@ async def remind(ctx):
     users_to_remind.append(ctx.author)
     await ctx.send("{0}, you will receive a DM when you are allowed to ping again.".format(ctx.author.name),
                    delete_after=60)
+    for _ in range(60):
+        await asyncio.sleep(1)
+    await ctx.message.delete()
 
 
 @bot.command()
@@ -436,9 +466,9 @@ async def resetuser(ctx, member: discord.Member):
         return
     if member in users_on_timeout:
         users_on_timeout[member] = 0
-        await ctx.send("{0} can now ping a helper.".format(member.name), delete_after=60)
+        await ctx.send("{0} can now ping a helper.".format(member.name))
     else:
-        await ctx.send("{0} can already ping helpers.".format(member.name), delete_after=60)
+        await ctx.send("{0} can already ping helpers.".format(member.name))
 
 
 @bot.command()
@@ -470,11 +500,14 @@ def write_data():
     with open("blacklist.json", mode="w") as f:
         for i in range(len(blacklisted_users)):
             blacklisted_users[i] = blacklisted_users[i].id
-        var_dict = {KEY_BLACKLIST: blacklisted_users, KEY_PREFIX: bot.command_prefix}
+        f.write(json.dumps(blacklisted_users))
+        print("Blacklist saved!")
+
+    with open("aliases.json", mode="w", encoding="UTF-8") as f:
+        var_dict = {KEY_PREFIX: bot.command_prefix,
+                    KEY_ALIASES: HELPER_ROLES}
         f.write(json.dumps(var_dict))
-        print("Data written!")
-    with open("aliases.json", mode="w") as f:
-        f.write(json.dumps(HELPER_ROLES))
+        print("Aliases and command prefix saved!")
 
 
 def load_data():
@@ -482,23 +515,27 @@ def load_data():
 
     global blacklisted_users
     global HELPER_ROLES
+    global ALIAS_MESSAGE
 
-    with open("aliases.json", mode="r") as f:
+    with open("aliases.json", mode="r", encoding="UTF-8") as f:
         print("Loading aliases...")
         try:
-            HELPER_ROLES = json.loads(f.read())
+            var_dict = json.loads(f.read())
+            bot.command_prefix = var_dict[KEY_PREFIX]
+            HELPER_ROLES = var_dict[KEY_ALIASES]
         except JSONDecodeError:
             print("Aliases failed to load.")
             raise
         else:
+            for subject in HELPER_ROLES.keys():
+                ALIAS_MESSAGE += "* {0:<27}: {1}\n".format(subject, ", ".join(HELPER_ROLES[subject]))
+            ALIAS_MESSAGE += "\n"
             print("Aliases loaded successfully.")
 
     print("Loading data...")
     with open("blacklist.json", mode="r") as f:
         try:
-            var_dict = json.loads(f.read())
-            blacklisted_users = var_dict[KEY_BLACKLIST]
-            bot.command_prefix = var_dict[KEY_PREFIX]
+            blacklisted_users = json.loads(f.read())
 
         except JSONDecodeError:
             print("Invalid data found.")
@@ -536,7 +573,8 @@ loop = asyncio.get_event_loop()
 try:
     load_data()
     loop.run_until_complete(main_task())
-except:
+except Exception as e:
+    print(e)
     loop.run_until_complete(bot.logout())
 finally:
     loop.close()
