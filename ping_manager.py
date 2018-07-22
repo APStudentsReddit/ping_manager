@@ -217,7 +217,6 @@ async def on_message(message):
             return
 
     if message.author in blacklisted_users:     # Disable blacklisted from interacting with bot
-        await message.author.send("You are blacklisted and cannot execute any commands.")
         return
 
     if bot.user.mention in message.content:
