@@ -31,9 +31,7 @@ HELPER_SUFFIX = " Helper"
 
 TIMEOUT_TIME = 3600
 
-HELPER_ROLES = {}   # See load_data()
-
-ALIAS_MESSAGE = "Alias for helpers:" + "\n"     # See load_data()
+helper_roles = {}   # See load_data()
 
 DISABLED_ROLES = {
                     "Calculus": ["calculus", "ap calc", "calc ab", "calc bc", "calc", "ab calc",
@@ -54,6 +52,7 @@ AMBIGUOUS_ROLES = {
                     "government": ["U.S Government", "Comp. Government"],
                   }
 
+# See alias command for alias message
 HELP_MESSAGE = """To ping helpers, use: `{0}ping <helper alias>`
 Be careful when using this command! 
 It will ping all helpers of that role, and you will not be able to ping again for """ \
@@ -117,8 +116,8 @@ def convert_alias(alias):
         The helper name, "ambiguous role", "disabled role", or "" (if none are found).
     """
 
-    for role in HELPER_ROLES:
-        if alias in HELPER_ROLES[role]:
+    for role in helper_roles:
+        if alias in helper_roles[role]:
             return role + HELPER_SUFFIX
     if alias in AMBIGUOUS_ROLES:
         return AMBIGUOUS
@@ -238,7 +237,11 @@ async def help(ctx):
 async def alias(ctx):
     """DMs helper aliases to the requester."""
 
-    for message in split_message(ALIAS_MESSAGE, embedded=True):
+    alias_message = "Alias for helpers:" + "\n"  # See alias command
+    for subject in helper_roles.keys():
+        alias_message += "* {0:<27}: {1}\n".format(subject, ", ".join(helper_roles[subject]))
+    alias_message += "\n"
+    for message in split_message(alias_message, embedded=True):
         await ctx.author.send(message)
     await ctx.message.delete()
 
@@ -304,7 +307,7 @@ async def ping(ctx, *, alias: str):
         ambiguous_role_response = "There are multiple helper roles that you could be referring to with." \
                                   "  Please specify by using one of the below roles and try again.\n```\n"
         for r in AMBIGUOUS_ROLES[alias]:
-            ambiguous_role_response += "\n* " + r + ": " + ", ".join(HELPER_ROLES[r]) + "\n"
+            ambiguous_role_response += "\n* " + r + ": " + ", ".join(helper_roles[r]) + "\n"
         ambiguous_role_response += "```"
 
         await ctx.send(ctx.author.name + ", " + ambiguous_role_response, delete_after=60)
@@ -352,8 +355,7 @@ async def ping(ctx, *, alias: str):
         del users_on_confirmation[users_on_confirmation.index(ctx.author)]
         return
 
-    # Check to make sure that the reactio was in response to the correct helper request.
-#    if ctx.author in users_on_confirmation and users_on_confirmation[ctx.author][1] == ctx.message:
+    # if ctx.author in users_on_confirmation and users_on_confirmation[ctx.author][1] == ctx.message:
 
     if str(reaction.emoji) == "❌":
         await ctx.send("Canceling request...", delete_after=10)
@@ -450,12 +452,170 @@ async def getblacklist(ctx):
 
 @bot.command()
 async def addalias(ctx):
-    pass
+
+    if not ctx.author.guild_permissions.manage_guild:
+        return
+
+    helper_message = "Please choose the number of the helper role you want to add to:\n" \
+                  "To cancel, type 'cancel'\n"
+    for i, alias in enumerate(helper_roles.keys()):
+        helper_message += "{0}: {1}\n".format(i+1, alias)
+
+    helper_prompt = await ctx.send(helper_message)
+    cancels = ["exit", "cancel", "quit", "stop"]
+
+    def helper_check(message):
+        if message.author == ctx.author and message.channel == ctx.channel:
+            if message.content in cancels:
+                return True
+            try:
+                select = int(message.content)
+            except ValueError:
+                return False
+            if select in range(1, len(helper_roles.keys()) + 1):
+                return True
+        return False
+
+    try:
+        helper_choice = await bot.wait_for("message", check=helper_check, timeout=60)
+    except asyncio.TimeoutError:
+        await ctx.send("Timed out!", delete_after=10)
+        await ctx.message.delete()
+        await helper_prompt.delete()
+        return
+
+    try:
+        helper_number = int(helper_choice.content) - 1
+    except ValueError:
+        await ctx.send("Canceling request...", delete_after=10)
+        await ctx.message.delete()
+        await helper_prompt.delete()
+        await helper_choice.delete()
+        return
+
+    helper_name = list(helper_roles.keys())[helper_number]
+    alias_prompt = await ctx.send("Now enter your alias name:")
+
+    def author_check(message):
+        if message.author == ctx.author and message.channel == ctx.channel:
+            return True
+        return False
+
+    try:
+        new_alias = await bot.wait_for('message', check=author_check, timeout=60)
+    except asyncio.TimeoutError:
+        await ctx.send("Timed out!", delete_after=10)
+        await ctx.message.delete()
+        await helper_prompt.delete()
+        await helper_choice.delete()
+        await alias_prompt.delete()
+        return
+
+    helper_roles[helper_name].append(new_alias.content)
+    await ctx.send("The alias {0} has been added to the {1} Helper aliases.".format(
+        new_alias.content, helper_name))
+    await ctx.message.delete()
+    await helper_prompt.delete()
+    await helper_choice.delete()
+    await alias_prompt.delete()
+    await new_alias.delete()
 
 
-@bot.command()
+@bot.command(aliases=["deletealias"])
 async def removealias(ctx):
-    pass
+
+    if not ctx.author.guild_permissions.manage_guild:
+        return
+
+    helper_message = "Please choose the number of the helper role you want to remove from:\n" \
+                     "To cancel, type 'cancel'\n\n"
+    for i, alias in enumerate(helper_roles.keys()):
+        helper_message += "{0}: {1}\n".format(i + 1, alias)
+
+    helper_prompt = await ctx.send(helper_message)
+    cancels = ["exit", "cancel", "quit", "stop"]
+
+    def helper_check(message):
+        if message.author == ctx.author and message.channel == ctx.channel:
+            if message.content in cancels:
+                return True
+            try:
+                select = int(message.content)
+            except ValueError:
+                return False
+            if select in range(1, len(helper_roles.keys()) + 1):
+                return True
+        return False
+
+    try:
+        helper_choice = await bot.wait_for("message", check=helper_check, timeout=60)
+    except asyncio.TimeoutError:
+        await ctx.send("Timed out!", delete_after=10)
+        await ctx.message.delete()
+        await helper_prompt.delete()
+        return
+
+    try:
+        helper_number = int(helper_choice.content) - 1
+    except ValueError:
+        await ctx.send("Canceling request...", delete_after=10)
+        await ctx.message.delete()
+        await helper_prompt.delete()
+        await helper_choice.delete()
+        return
+
+    helper_name = list(helper_roles.keys())[helper_number]
+
+    alias_message = "Now select the number of the alias you want to remove:\n"
+    for i, alias in enumerate(helper_roles[helper_name]):
+        alias_message += "{0}: {1}\n".format(i + 1, alias)
+
+    alias_prompt = await ctx.send(alias_message)
+
+    def alias_check(message):
+        if message.author == ctx.author and message.channel == ctx.channel:
+            if message.content in cancels:
+                return True
+            try:
+                select = int(message.content)
+            except ValueError:
+                return False
+            if select in range(1, len(helper_roles[helper_name]) + 1):
+                return True
+        return False
+
+    try:
+        alias_choice = await bot.wait_for('message', check=alias_check, timeout=60)
+    except asyncio.TimeoutError:
+        await ctx.send("Timed out!", delete_after=10)
+        await ctx.message.delete()
+        await helper_prompt.delete()
+        await helper_choice.delete()
+        await alias_prompt.delete()
+        return
+
+    try:
+        alias_number = int(alias_choice.content) - 1
+    except ValueError:
+        await ctx.send("Canceling request...", delete_after=10)
+        await ctx.message.delete()
+        await helper_prompt.delete()
+        await helper_choice.delete()
+        await alias_prompt.delete()
+        await alias_choice.delete()
+        return
+
+    alias_name = helper_roles[helper_name][alias_number]
+
+    del helper_roles[helper_name][alias_number]
+    await ctx.send("The alias {0} has been removed from the {1} Helper aliases.".format(
+        alias_name, helper_name))
+
+    await ctx.message.delete()
+    await helper_prompt.delete()
+    await helper_choice.delete()
+    await alias_prompt.delete()
+    await alias_choice.delete()
 
 
 @bot.command()
@@ -505,7 +665,7 @@ def write_data():
 
     with open("aliases.json", mode="w", encoding="UTF-8") as f:
         var_dict = {KEY_PREFIX: bot.command_prefix,
-                    KEY_ALIASES: HELPER_ROLES}
+                    KEY_ALIASES: helper_roles}
         f.write(json.dumps(var_dict))
         print("Aliases and command prefix saved!")
 
@@ -514,7 +674,7 @@ def load_data():
     """Reads the ids from the blacklist from the JSON file"""
 
     global blacklisted_users
-    global HELPER_ROLES
+    global helper_roles
     global ALIAS_MESSAGE
 
     with open("aliases.json", mode="r", encoding="UTF-8") as f:
@@ -522,14 +682,11 @@ def load_data():
         try:
             var_dict = json.loads(f.read())
             bot.command_prefix = var_dict[KEY_PREFIX]
-            HELPER_ROLES = var_dict[KEY_ALIASES]
+            helper_roles = var_dict[KEY_ALIASES]
         except JSONDecodeError:
             print("Aliases failed to load.")
             raise
         else:
-            for subject in HELPER_ROLES.keys():
-                ALIAS_MESSAGE += "* {0:<27}: {1}\n".format(subject, ", ".join(HELPER_ROLES[subject]))
-            ALIAS_MESSAGE += "\n"
             print("Aliases loaded successfully.")
 
     print("Loading data...")
