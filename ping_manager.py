@@ -218,7 +218,7 @@ async def ping(ctx, *, alias: str):
     if ctx.author in users_on_timeout and not ctx.author.guild_permissions.manage_guild:
         time_left = users_on_timeout[ctx.author]    # In seconds
         await ctx.send("Sorry {0}, but you still have to wait {1} minutes and {2} seconds"
-                       .format(ctx.author.name, time_left // 60, time_left - time_left // 60), delete_after=60)
+                       .format(ctx.author.name, time_left // 60, time_left % 60), delete_after=60)
         return
 
     helper_role = convert_alias(alias)
