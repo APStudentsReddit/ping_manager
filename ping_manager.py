@@ -7,12 +7,12 @@ from json.decoder import JSONDecodeError
 
 DESCRIPTION = """This bot is used to ping helpers while also preventing spamming of pings in the APStudents discord.
 It was created by @jjam912#2180 and @ACT Inc.#2590
-You can find our github at https://github.com/APStudentsReddit/ping_manager/tree/rewrite
+You can find our github at https://github.com/APStudentsReddit/ping_manager/
 This was written using discord.py rewrite.
 """
 
 # This bot is only meant to be run on one server, so hardcoding this id seems fine (tell me if it isn't).
-GUILD_ID = 420053499707916288     # Currently set to JJam912's Bot Army
+GUILD_ID = 467170920155316235     # Currently set to Bot Testing
 KEY_BLACKLIST = "blacklist"
 KEY_PREFIX = "prefix"
 
@@ -237,30 +237,31 @@ async def ping(ctx, *, alias: str):
         return
 
     # We may now assume helper_role is verified.
-    YES = ["y", "yes"]
-    NO = ["n", "no", "stop", "cancel", "exit", "quit"]
 
     confirm_ping = await ctx.send("{0}, You are about to ping all the {1}s on this server. " 
-                                  "Please make sure you have clearly elaborated your question and/or shown all work. \n""If you have done so, type Y or Yes in the next 30 seconds. \n"
-                                  "To cancel, type N, No, Stop, Cancel, Exit, or Quit.\n"
+                                  "Please make sure you have clearly elaborated your question and/or shown all work. \n"
+                                  "If you have done so, react with ✅ in the next 30 seconds. \n"
+                                  "To cancel, react with ❌.\n"
                                   "After 30 seconds, this message will be deleted and your request will be canceled."
                                   .format(ctx.author.name, helper_role))
+    await confirm_ping.add_reaction("✅")
+    await confirm_ping.add_reaction("❌")
 
-    def ping_check(message):
+    def ping_check(reaction, user):
         """Determines if the confirmation is a valid response."""
-        if message.author == ctx.author and message.guild == ctx.guild:
-            if message.content.lower() in YES or message.content.lower() in NO:
+        if user == ctx.author:
+            if str(reaction.emoji) == "✅" or str(reaction.emoji) == "❌":
                 return True
         return False
 
     try:
-        user_confirm = await bot.wait_for('message', timeout=30, check=ping_check)
+        user_confirm = await bot.wait_for('reaction_add', timeout=30, check=ping_check)
     except asyncio.TimeoutError:
         await ctx.send("Timed out!", delete_after=10)
         await confirm_ping.delete()
         await ctx.message.delete()
         return
-    if user_confirm.content in NO:
+    if str(user_confirm[0].emoji) == "❌":
         await ctx.send("Canceling request...", delete_after=10)
         await confirm_ping.delete()
         await user_confirm.delete()
@@ -287,7 +288,7 @@ async def time(ctx):
     try:
         time_left = users_on_timeout[ctx.author]  # In seconds
         await ctx.send("{0}, you still have to wait {1} minutes and {2} seconds"
-                   .format(ctx.author.name, time_left // 60, time_left - time_left // 60), delete_after=60)
+                       .format(ctx.author.name, time_left // 60, time_left % 60), delete_after=60)
     except KeyError:
         await ctx.send("{0}, you are currently allowed to ping a helper.".format(ctx.author.name), delete_after=60)
 
