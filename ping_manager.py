@@ -71,6 +71,8 @@ To unblacklist a user from pinging helpers use: `{0}unblacklist <user's mention>
 To get all members who are blacklisted, use: `{0}getblacklist`
 To change the prefix of commands on your server use: `{0}setprefix <new_prefix>`
 To reset a user's timeout and allowing to ping a helper use: `{0}resetuser <user's mention>`
+To add an alias to a helper role use: `{0}addalias`
+To remove an alias from a helper role use: `{0}removealias`
 
 **NOTE:** At the request of bork, Computer Science A, Home Economics, and Calculus Helpers will not receive any pings.
 Do not try to ping these roles; it will not work.
@@ -87,7 +89,7 @@ COMMAND_TABLE = \
     |   !time               |   Sends cooldown time     |   Everyone        |
     |   !remind             |   Reminds when can ping   |   Everyone        |
     |-----------------------+---------------------------+-------------------|
-    |   !alias              |   Shows all aliases       |   Everyone        |
+    |   !aliases            |   Shows all aliases       |   Everyone        |
     |   !help               |   Shows this              |   Everyone        |
     |-----------------------+---------------------------+-------------------|
     |   !blacklist <user>   |   Bans user from pinging  |   Moderator       |
@@ -95,6 +97,8 @@ COMMAND_TABLE = \
     |   !getblacklist       |   Lists names of banned   |   Moderator       |
     |   !setprefix <prefix> |   Sets bot prefix         |   Moderator       |
     |   !resetuser <user>   |   Resets user's cooldown  |   Moderator       |
+    |   !addalias           |   Adds an alias           |   Moderator       |
+    |   !removealias        |   Removes an alias        |   Moderator       |
     |_______________________|___________________________|___________________|
     Cooldown Time: """ + str(TIMEOUT_TIME // 60) + """ minutes
     Current prefix: """ + str(bot.command_prefix) + """```
@@ -233,8 +237,8 @@ async def help(ctx):
     await ctx.message.delete()
 
 
-@bot.command(aliases=["aliases"])
-async def alias(ctx):
+@bot.command(aliases=["alias"])
+async def aliases(ctx):
     """DMs helper aliases to the requester."""
 
     alias_message = "Alias for helpers:" + "\n"  # See alias command
@@ -452,12 +456,13 @@ async def getblacklist(ctx):
 
 @bot.command()
 async def addalias(ctx):
+    """Adds an alias to a helper role after some selections."""
 
     if not ctx.author.guild_permissions.manage_guild:
         return
 
     helper_message = "Please choose the number of the helper role you want to add to:\n" \
-                  "To cancel, type 'cancel'\n"
+                     "To cancel, type 'cancel'\n"
     for i, alias in enumerate(helper_roles.keys()):
         helper_message += "{0}: {1}\n".format(i+1, alias)
 
@@ -465,6 +470,7 @@ async def addalias(ctx):
     cancels = ["exit", "cancel", "quit", "stop"]
 
     def helper_check(message):
+        """Checks whether the user quit or selected a valid number in the helper role index."""
         if message.author == ctx.author and message.channel == ctx.channel:
             if message.content in cancels:
                 return True
@@ -497,6 +503,7 @@ async def addalias(ctx):
     alias_prompt = await ctx.send("Now enter your alias name:")
 
     def author_check(message):
+        """Checks whether the message is by the original requestor."""
         if message.author == ctx.author and message.channel == ctx.channel:
             return True
         return False
@@ -523,6 +530,7 @@ async def addalias(ctx):
 
 @bot.command(aliases=["deletealias"])
 async def removealias(ctx):
+    """Removes an alias from the helper roles after some selections."""
 
     if not ctx.author.guild_permissions.manage_guild:
         return
@@ -536,6 +544,7 @@ async def removealias(ctx):
     cancels = ["exit", "cancel", "quit", "stop"]
 
     def helper_check(message):
+        """Checks whether the user quit or selected a valid number in the helper role index."""
         if message.author == ctx.author and message.channel == ctx.channel:
             if message.content in cancels:
                 return True
@@ -573,6 +582,7 @@ async def removealias(ctx):
     alias_prompt = await ctx.send(alias_message)
 
     def alias_check(message):
+        """Checks whether the author quit or selected a valid number in the helper alias index."""
         if message.author == ctx.author and message.channel == ctx.channel:
             if message.content in cancels:
                 return True
@@ -625,7 +635,7 @@ async def resetuser(ctx, member: discord.Member):
     if not ctx.author.guild_permissions.manage_guild:
         return
     if member in users_on_timeout:
-        users_on_timeout[member] = 0
+        del users_on_timeout[member]
         await ctx.send("{0} can now ping a helper.".format(member.name))
     else:
         await ctx.send("{0} can already ping helpers.".format(member.name))
@@ -675,7 +685,6 @@ def load_data():
 
     global blacklisted_users
     global helper_roles
-    global ALIAS_MESSAGE
 
     with open("aliases.json", mode="r", encoding="UTF-8") as f:
         print("Loading aliases...")
@@ -719,6 +728,7 @@ def convert_ids():
 
 @asyncio.coroutine
 def main_task():
+    """Login"""
     with open("token.txt", mode="r") as f:
         token = f.read()
     yield from bot.login(token)
