@@ -244,6 +244,8 @@ async def ping(ctx, *, alias: str):
                                   "To cancel, react with ❌.\n"
                                   "After 30 seconds, this message will be deleted and your request will be canceled."
                                   .format(ctx.author.name, helper_role))
+    await confirm_ping.add_reaction("✅")
+    await confirm_ping.add_reaction("❌")
 
     def ping_check(reaction, user):
         """Determines if the confirmation is a valid response."""
@@ -259,7 +261,7 @@ async def ping(ctx, *, alias: str):
         await confirm_ping.delete()
         await ctx.message.delete()
         return
-    if str(user_confirm.emoji) == "❌":
+    if str(user_confirm[0].emoji) == "❌":
         await ctx.send("Canceling request...", delete_after=10)
         await confirm_ping.delete()
         await user_confirm.delete()
