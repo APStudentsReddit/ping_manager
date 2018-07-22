@@ -21,6 +21,7 @@ bot.remove_command("help")
 
 blacklisted_users = []
 users_on_timeout = {}
+users_with_active_requests = {}
 users_to_remind = []
 
 AMBIGUOUS = "Ambiguous role"
@@ -238,12 +239,22 @@ async def ping(ctx, *, alias: str):
 
     # We may now assume helper_role is verified.
 
+    # Check to see if there already is a helper request active for this user. If there is, delete the old request.
+    if ctx.author in users_with_active_requests:
+        await users_with_active_requests[ctx.author][0].delete()
+        await users_with_active_requests[ctx.author][1].delete()
+
     confirm_ping = await ctx.send("{0}, You are about to ping all the {1}s on this server. " 
                                   "Please make sure you have clearly elaborated your question and/or shown all work. \n"
                                   "If you have done so, react with ✅ in the next 30 seconds. \n"
                                   "To cancel, react with ❌.\n"
                                   "After 30 seconds, this message will be deleted and your request will be canceled."
                                   .format(ctx.author.name, helper_role))
+    
+    # Add the new requet to the list of requests.
+    users_with_active_requests[ctx.author] = [confirm_ping, ctx.message]
+
+    # Add the two options for reacts to make it easier for the user to click their choice.
     await confirm_ping.add_reaction("✅")
     await confirm_ping.add_reaction("❌")
 
@@ -260,25 +271,33 @@ async def ping(ctx, *, alias: str):
         await ctx.send("Timed out!", delete_after=10)
         await confirm_ping.delete()
         await ctx.message.delete()
+        del users_with_active_requests[ctx.author]
         return
-    if str(user_confirm[0].emoji) == "❌":
-        await ctx.send("Canceling request...", delete_after=10)
+
+    # Check to make sure that the reactio was in response to the correct helper request.
+    if ctx.author in users_with_active_requests and users_with_active_requests[ctx.author][1] == ctx.message:
+
+        if str(user_confirm[0].emoji) == "❌":
+            await ctx.send("Canceling request...", delete_after=10)
+            await confirm_ping.delete()
+            await user_confirm.delete()
+            await ctx.message.delete()
+            del users_with_active_requests[ctx.author]
+            return
+
+        # Member answered Yes
+        actual_role = discord.utils.get(ctx.guild.roles, name=helper_role)
+        await actual_role.edit(mentionable=True)
+        await ctx.send("Ping requested by {0} for {1}".format(ctx.author.mention, actual_role.mention))
+        await actual_role.edit(mentionable=False)
+
+        users_on_timeout[ctx.author] = TIMEOUT_TIME
+
+        del users_with_active_requests[ctx.author]
+
         await confirm_ping.delete()
         await user_confirm.delete()
         await ctx.message.delete()
-        return
-
-    # Member answered Yes
-    actual_role = discord.utils.get(ctx.guild.roles, name=helper_role)
-    await actual_role.edit(mentionable=True)
-    await ctx.send("Ping requested by {0} for {1}".format(ctx.author.mention, actual_role.mention))
-    await actual_role.edit(mentionable=False)
-
-    users_on_timeout[ctx.author] = TIMEOUT_TIME
-
-    await confirm_ping.delete()
-    await user_confirm.delete()
-    await ctx.message.delete()
 
 
 @bot.command()
