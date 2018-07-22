@@ -30,6 +30,10 @@ This was written to allow students to easily ping the AP Helpers while also prev
         * Allows a mod to set the prefix to anything.
     * !resetuser |@member|
         * Reset a user's timeout.
+    * !addalias
+        * Adds an alias after some selection
+    * !removealias
+        * Removes an alias after some selection
         
 Note that there are no pings for Computer Science A, Calculus, or Home Economics Helpers at request of an APStudents mod (those channels are active enough).
     
