@@ -237,30 +237,29 @@ async def ping(ctx, *, alias: str):
         return
 
     # We may now assume helper_role is verified.
-    YES = ["y", "yes"]
-    NO = ["n", "no", "stop", "cancel", "exit", "quit"]
 
     confirm_ping = await ctx.send("{0}, You are about to ping all the {1}s on this server. " 
-                                  "Please make sure you have clearly elaborated your question and/or shown all work. \n""If you have done so, type Y or Yes in the next 30 seconds. \n"
-                                  "To cancel, type N, No, Stop, Cancel, Exit, or Quit.\n"
+                                  "Please make sure you have clearly elaborated your question and/or shown all work. \n"
+                                  "If you have done so, react with ✅ in the next 30 seconds. \n"
+                                  "To cancel, react with ❌.\n"
                                   "After 30 seconds, this message will be deleted and your request will be canceled."
                                   .format(ctx.author.name, helper_role))
 
-    def ping_check(message):
+    def ping_check(reaction, user):
         """Determines if the confirmation is a valid response."""
-        if message.author == ctx.author and message.guild == ctx.guild:
-            if message.content.lower() in YES or message.content.lower() in NO:
+        if user == ctx.author:
+            if str(reaction.emoji) == "✅" or str(reaction.emoji) == "❌":
                 return True
         return False
 
     try:
-        user_confirm = await bot.wait_for('message', timeout=30, check=ping_check)
+        user_confirm = await bot.wait_for('reaction_add', timeout=30, check=ping_check)
     except asyncio.TimeoutError:
         await ctx.send("Timed out!", delete_after=10)
         await confirm_ping.delete()
         await ctx.message.delete()
         return
-    if user_confirm.content in NO:
+    if str(user_confirm.emoji) == "❌":
         await ctx.send("Canceling request...", delete_after=10)
         await confirm_ping.delete()
         await user_confirm.delete()
