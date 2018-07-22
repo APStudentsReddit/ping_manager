@@ -309,7 +309,8 @@ async def ping(ctx, *, alias: str):
         await ctx.send("Ping requested by {0} for {1}".format(ctx.author.mention, actual_role.mention))
         await actual_role.edit(mentionable=False)
 
-        users_on_timeout[ctx.author] = TIMEOUT_TIME
+        if not ctx.author.guild_permissions.manage_guild:
+            users_on_timeout[ctx.author] = TIMEOUT_TIME
 
         del users_with_active_requests[ctx.author]
 
