@@ -7,12 +7,12 @@ from json.decoder import JSONDecodeError
 
 DESCRIPTION = """This bot is used to ping helpers while also preventing spamming of pings in the APStudents discord.
 It was created by @jjam912#2180 and @ACT Inc.#2590
-You can find our github at https://github.com/APStudentsReddit/ping_manager/tree/rewrite
+You can find our github at https://github.com/APStudentsReddit/ping_manager/
 This was written using discord.py rewrite.
 """
 
 # This bot is only meant to be run on one server, so hardcoding this id seems fine (tell me if it isn't).
-GUILD_ID = 420053499707916288     # Currently set to JJam912's Bot Army
+GUILD_ID = 467170920155316235     # Currently set to Bot Testing
 KEY_BLACKLIST = "blacklist"
 KEY_PREFIX = "prefix"
 
