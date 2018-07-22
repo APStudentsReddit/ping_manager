@@ -88,32 +88,57 @@ AMBIGUOUS_ROLES = {
                     "government": ["U.S Government", "Comp. Government"],
                   }
 
-HELP_MESSAGE = """To ping helpers, use ```{0}ping <helper alias>```
+HELP_MESSAGE = """To ping helpers, use: `{0}ping <helper alias>`
 Be careful when using this command! 
-It will ping all helpers of that role, and you will not be able to ping again for """ + str(TIMEOUT_TIME) + """ seconds.
+It will ping all helpers of that role, and you will not be able to ping again for """ \
+               + str(TIMEOUT_TIME // 60) + """ minutes.
 
-To check how much longer until you can ping a helper use ```{0}time```
-To request to receive a reminder DM when you can once again ping a helper use ```{0}remind```
+To check how much longer until you can ping a helper use: `{0}time`
+To request to receive a reminder DM when you can once again ping a helper use: `{0}remind`
 
 In order to ping a role, you must use one that role's aliases. 
-To find the aliases for all the roles use : ```{0}alias```
+To find the aliases for all the roles use: `{0}alias`
 
 *Below are mod-only commands*:
 
-To completely blacklist a user from pinging helpers use: ```{0}blacklist <user's mention>```
-To unblacklist a user from pinging helpers use: ```{0}unblacklist <user's mention>```
-To get all members who are blacklisted, use: ```{0}getblacklist```
-To change the prefix of commands on your server use: ```{0}setprefix <new_prefix>```
-To reset a user's timeout and allowing to ping a helper use: ```{0}resetuser <user's mention>```
+To completely blacklist a user from pinging helpers use: `{0}blacklist <user's mention>`
+To unblacklist a user from pinging helpers use: `{0}unblacklist <user's mention>`
+To get all members who are blacklisted, use: `{0}getblacklist`
+To change the prefix of commands on your server use: `{0}setprefix <new_prefix>`
+To reset a user's timeout and allowing to ping a helper use: `{0}resetuser <user's mention>`
 
 **NOTE:** At the request of bork, Computer Science A, Home Economics, and Calculus Helpers will not receive any pings.
-Do not try to ping these roles; it will not work."""
+Do not try to ping these roles; it will not work.
+
+If you wish, you may refer to the command table below.
+"""
+
+COMMAND_TABLE = \
+    """```
+    _________________________________________________________________________
+    |   Command             |       Description         |   Access Level    |
+    |-----------------------+---------------------------+-------------------|
+    |   !ping <alias>       |   Pings a helper          |   Everyone        |
+    |   !time               |   Sends cooldown time     |   Everyone        |
+    |   !remind             |   Reminds when can ping   |   Everyone        |
+    |-----------------------+---------------------------+-------------------|
+    |   !alias              |   Shows all aliases       |   Everyone        |
+    |   !help               |   Shows this              |   Everyone        |
+    |-----------------------+---------------------------+-------------------|
+    |   !blacklist <user>   |   Bans user from pinging  |   Moderator       |
+    |   !unblacklist <user> |   Unbans user             |   Moderator       |
+    |   !getblacklist       |   Lists names of banned   |   Moderator       |
+    |   !setprefix <prefix> |   Sets bot prefix         |   Moderator       |
+    |   !resetuser <user>   |   Resets user's cooldown  |   Moderator       |
+    |_______________________|___________________________|___________________|
+    Cooldown Time: """ + str(TIMEOUT_TIME // 60) + """ minutes```
+    """
 
 
-ALIAS_MESSAGE = "Alias for helpers:```"
+ALIAS_MESSAGE = "Alias for helpers:" + "\n"
 for subject in HELPER_ROLES.keys():
-    ALIAS_MESSAGE += "* {0}: {1}\n".format(subject, ", ".join(HELPER_ROLES[subject]))
-ALIAS_MESSAGE += "\n```"
+    ALIAS_MESSAGE += "* {0:<27}: {1}\n".format(subject, ", ".join(HELPER_ROLES[subject]))
+ALIAS_MESSAGE += "\n"
 
 
 def convert_alias(alias):
@@ -140,6 +165,52 @@ def convert_alias(alias):
         if alias in DISABLED_ROLES[role]:
             return DISABLED
     return None
+
+
+def split_message(message, embedded=False, language: str=""):
+    """
+    Splits a message into more messages of size less than 2000 characters.
+
+    This is to bypass the Discord 2000 character limit.
+
+    Parameters
+    ----------
+    message : str
+        A long message to split up.
+    embedded : bool
+        Whether to embed the message in code format (surrounded by ```)
+    language : str
+        Name of the language of the code.
+
+    Returns
+    -------
+    list of str
+        All messages to send.
+    """
+
+    lines = message.split("\n")
+    curr_message = ""
+    messages = []
+
+    if embedded:
+        curr_message += "```" + language + "\n"
+        for line in lines:
+            if len(line) + len(curr_message) + 5 > 2000:
+                messages.append(curr_message + "```")
+                curr_message = "```" + language + line + "\n"
+            else:
+                curr_message += line + "\n"
+        messages.append(curr_message + "```")
+
+    else:
+        for line in lines:
+            if len(line) + len(curr_message) + 2 > 2000:
+                messages.append(curr_message)
+                curr_message = line + "\n"
+            else:
+                curr_message += line + "\n"
+        messages.append(curr_message)
+    return messages
 
 
 async def update_timer():
@@ -190,7 +261,8 @@ async def help(ctx):
     """DMs bot description and help for the requester."""
 
     await ctx.author.send(bot.description)
-    await ctx.author.send(HELP_MESSAGE.format(bot.command_prefix))
+    await ctx.author.send("\n\n" + HELP_MESSAGE.format(bot.command_prefix))
+    await ctx.author.send("\n" + COMMAND_TABLE)
     await ctx.message.delete()
 
 
@@ -198,7 +270,8 @@ async def help(ctx):
 async def alias(ctx):
     """DMs helper aliases to the requester."""
 
-    await ctx.author.send(ALIAS_MESSAGE)
+    for message in split_message(ALIAS_MESSAGE, embedded=True):
+        await ctx.author.send(message)
     await ctx.message.delete()
 
 
@@ -229,9 +302,9 @@ async def ping(ctx, *, alias: str):
     if ctx.author in blacklisted_users:
         await ctx.send("Sorry, but you are blacklisted from pinging helpers.", delete_after=60)
         return
-    # Check to see if there already is a helper request active for this user. If there is, ignore the request.
+
     if ctx.author in users_on_confirmation:
-        await ctx.send("Please confirm and cancel your current request before pinging again.")
+        await ctx.send("Please confirm and cancel your current request before pinging again.", delete_after=30)
         return
 
     if ctx.author in users_on_timeout and not ctx.author.guild_permissions.manage_guild:
@@ -375,7 +448,9 @@ async def getblacklist(ctx):
     if not ctx.author.guild_permissions.manage_guild:
         return
     if blacklisted_users:
-        await ctx.send("Blacklisted members are: " + ", ".join(list(map(lambda x: x.name, blacklisted_users))))
+        for message in split_message("Blacklisted members are: " + ", ".join(
+                list(map(lambda x: x.name, blacklisted_users)))):
+            await ctx.send(message)
     else:
         await ctx.send("No members are blacklisted.")
 
