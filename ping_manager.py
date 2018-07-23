@@ -25,6 +25,7 @@ blacklisted_users = []
 users_on_timeout = {}
 users_on_confirmation = []
 users_to_remind = []
+ping_frequency = {}
 
 AMBIGUOUS = "Ambiguous role"
 DISABLED = "Disabled role"
@@ -73,6 +74,7 @@ To change the length of the timeout on your server use: `{0}settimeout <new time
 To reset a user's timeout and allowing to ping a helper use: `{0}resetuser <user's mention>`
 To add an alias to a helper role use: `{0}addalias`
 To remove an alias from a helper role use: `{0}removealias`
+To see ping frequencies use: `{0}stats`
 
 **NOTE:** At the request of bork, Computer Science A, Home Economics, and Calculus Helpers will not receive any pings.
 Do not try to ping these roles; it will not work.
@@ -82,25 +84,26 @@ If you wish, you may refer to the command table below.
 
 COMMAND_TABLE = \
     """```
-    ________________________________________________________________________
-    |   Command            |       Description         |   Access Level    |
-    |----------------------+---------------------------+-------------------|
-    |   ping <alias>       |   Pings a helper          |   Everyone        |
-    |   time               |   Sends cooldown time     |   Everyone        |
-    |   remind             |   Reminds when can ping   |   Everyone        |
-    |----------------------+---------------------------+-------------------|
-    |   aliases            |   Shows all aliases       |   Everyone        |
-    |   help               |   Shows this              |   Everyone        |
-    |----------------------+---------------------------+-------------------|
-    |   blacklist <user>   |   Bans user from pinging  |   Moderator       |
-    |   unblacklist <user> |   Unbans user             |   Moderator       |
-    |   getblacklist       |   Lists names of banned   |   Moderator       |
-    |   setprefix <prefix> |   Sets bot prefix         |   Moderator       |
-    |   settimeout <time>  |   Sets bot timeout (sec)  |   Moderator       |
-    |   resetuser <user>   |   Resets user's cooldown  |   Moderator       |
-    |   addalias           |   Adds an alias           |   Moderator       |
-    |   removealias        |   Removes an alias        |   Moderator       |
-    |______________________|___________________________|___________________|
+    _________________________________________________________________________
+    |   Command            |        Description         |   Access Level    |
+    |----------------------+----------------------------+-------------------|
+    |   ping <alias>       |    Pings a helper          |   Everyone        |
+    |   time               |    Sends cooldown time     |   Everyone        |
+    |   remind             |    DMs when can ping       |   Everyone        |
+    |----------------------+----------------------------+-------------------|
+    |   aliases            |    Shows all aliases       |   Everyone        |
+    |   help               |    Shows this              |   Everyone        |
+    |----------------------+---------------------------+--------------------|
+    |   blacklist <user>   |    Bans user from pinging  |   Moderator       |
+    |   unblacklist <user> |    Unbans user             |   Moderator       |
+    |   getblacklist       |    Lists names of banned   |   Moderator       |
+    |   setprefix <prefix> |    Sets bot prefix         |   Moderator       |
+    |   settimeout <time>  |    Sets bot timeout (sec)  |   Moderator       |
+    |   resetuser <user>   |    Resets user's cooldown  |   Moderator       |
+    |   addalias           |    Adds an alias           |   Moderator       |
+    |   removealias        |    Removes an alias        |   Moderator       |
+    |   stats              |    DMs ping frequencies    |    Moderator      |
+    |______________________|____________________________|___________________|
     Cooldown Time: {0} minutes
     Current prefix: {1}```"""
 
@@ -175,22 +178,6 @@ def split_message(message, embedded=False, language: str=""):
                 curr_message += line + "\n"
         messages.append(curr_message)
     return messages
-
-
-async def update_timer():
-    """Updates all students' cooldown periods every second."""
-
-    while True:
-        await asyncio.sleep(1)
-        names_to_remove = []
-        for member in users_on_timeout:
-            users_on_timeout[member] -= 1
-            if users_on_timeout[member] <= 0:
-                names_to_remove.append(member)
-        for member in names_to_remove:
-            if member in users_to_remind:
-                await member.send("This is your reminder that you are now allowed to ping helpers.")
-            del users_on_timeout[member]
 
 
 @bot.event
@@ -276,9 +263,8 @@ async def ping(ctx, *, alias: str):
 
     # See on_message for current implementation
     # if ctx.author in blacklisted_users:
-    #     await ctx.send("Sorry, but you are blacklisted from pinging helpers.", delete_after=60)
-    #     for _ in range(60):
-    #         await asyncio.sleep(1)
+    #     await ctx.send("Sorry {0}, but you are blacklisted from pinging helpers.".format(
+    #                    ctx.author.name), delete_after=60)
     #     await ctx.message.delete()
     #     return
 
@@ -368,6 +354,7 @@ async def ping(ctx, *, alias: str):
         del users_on_confirmation[users_on_confirmation.index(ctx.author)]
         return
 
+    del users_on_confirmation[users_on_confirmation.index(ctx.author)]
     # Member answered Yes
     actual_role = discord.utils.get(ctx.guild.roles, name=helper_role)
     await actual_role.edit(mentionable=True)
@@ -377,10 +364,13 @@ async def ping(ctx, *, alias: str):
     if not ctx.author.guild_permissions.manage_guild:
         users_on_timeout[ctx.author] = TIMEOUT_TIME
 
-    del users_on_confirmation[users_on_confirmation.index(ctx.author)]
-
     await confirm_ping.delete()
     await ctx.message.delete()
+
+    try:
+        ping_frequency[helper_role] += 1
+    except KeyError:
+        ping_frequency[helper_role] = 1
 
 
 @bot.command()
@@ -420,7 +410,7 @@ async def blacklist(ctx, member: discord.Member):
         return
     if member not in blacklisted_users:
         blacklisted_users.append(member)
-        await ctx.send("{0} has been blacklisted by {1}.".format(member.name, ctx.author.name))
+        await ctx.send("{0} has been blacklisted by {1}.".format(member.mention, ctx.author.name))
     else:
         await ctx.send("{0}, {1} was already blacklisted".format(ctx.author.name, member.name))
     await ctx.message.delete()
@@ -434,7 +424,7 @@ async def unblacklist(ctx, member: discord.Member):
         return
     if member in blacklisted_users:
         del blacklisted_users[blacklisted_users.index(member)]
-        await ctx.send("{0} was unblacklisted by {1}.".format(member.name, ctx.author.name))
+        await ctx.send("{0} was unblacklisted by {1}.".format(member.mention, ctx.author.name))
     await ctx.message.delete()
 
 
@@ -518,13 +508,22 @@ async def addalias(ctx):
         await alias_prompt.delete()
         return
 
-    if new_alias.content not in helper_roles[helper_name]:
-        helper_roles[helper_name].append(new_alias.content)
+    if new_alias.content in cancels:
+        await ctx.send("Canceling request...", delete_after=10)
+        await ctx.message.delete()
+        await helper_prompt.delete()
+        await helper_choice.delete()
+        await alias_prompt.delete()
+        await new_alias.delete()
+        return
+
+    if new_alias.content.lower() not in helper_roles[helper_name]:
+        helper_roles[helper_name].append(new_alias.content.lower())
         await ctx.send("The alias {0} has been added to the {1} Helper aliases by {2}.".format(
-            new_alias.content, helper_name, ctx.author.name))
+            new_alias.content.lower(), helper_name, ctx.author.name))
     else:
         await ctx.send("{0}, the alias {1} was already in {2} Helper aliases".format(
-            ctx.author.name, new_alias.content, helper_name))
+            ctx.author.name, new_alias.content.lower(), helper_name))
 
     await ctx.message.delete()
     await helper_prompt.delete()
@@ -638,7 +637,7 @@ async def removealias(ctx):
     await alias_choice.delete()
 
 
-@bot.command()
+@bot.command(aliases=["reset"])
 async def resetuser(ctx, member: discord.Member):
     """Reset a user's current timeout, allowing them to ping a helper."""
 
@@ -652,7 +651,7 @@ async def resetuser(ctx, member: discord.Member):
     await ctx.message.delete()
 
 
-@bot.command()
+@bot.command(aliases="prefix")
 async def setprefix(ctx, prefix: str):
     """Changes the prefix of the bot."""
 
@@ -663,7 +662,7 @@ async def setprefix(ctx, prefix: str):
     await ctx.message.delete()
 
 
-@bot.command()
+@bot.command(aliases=["settime"])
 async def settimeout(ctx, seconds: int):
     """Set the length of the timeout in seconds."""
 
@@ -674,6 +673,32 @@ async def settimeout(ctx, seconds: int):
     TIMEOUT_TIME = int(seconds)
     await ctx.send("{0} set the timeout length to {1} minutes and {2} seconds.".format(
         ctx.author.name, seconds // 60, seconds % 60))
+    await ctx.message.delete()
+
+
+@bot.command()
+async def stats(ctx):
+    """Prints ping frequency of all helper roles that have been pinged"""
+
+    if not ctx.author.guild_permissions.manage_guild:
+        return
+
+    roles = sorted(ping_frequency, key=lambda x: x)
+
+    total_pings = sum([ping_frequency[k] for k in roles])
+
+    stats_message = "Percentages of pings out of {0} pings\n\n".format(total_pings)
+    for role in roles:
+        stats_message += "{0:<34}: ".format(role)
+        stats_message += ("{:04." + str(len(str(total_pings)) + 1) + "f}\n").format(ping_frequency[role] / total_pings)
+
+    stats_message += "\nTotal number of pings out of {0} pings\n\n".format(total_pings)
+    for role in roles:
+        stats_message += "{0:<34}: ".format(role)
+        stats_message += "{0}\n".format(ping_frequency[role])
+
+    for message in split_message(stats_message, embedded=True):
+        await ctx.author.send(message)
     await ctx.message.delete()
 
 
@@ -688,6 +713,22 @@ async def on_ready():
     await bot.change_presence(activity=discord.Game(name='By ACT Inc. and jjam912'))
     bot.loop.create_task(update_timer())
     convert_ids()
+
+
+async def update_timer():
+    """Updates all students' cooldown periods every second."""
+
+    while True:
+        await asyncio.sleep(1)
+        names_to_remove = []
+        for member in users_on_timeout:
+            users_on_timeout[member] -= 1
+            if users_on_timeout[member] <= 0:
+                names_to_remove.append(member)
+        for member in names_to_remove:
+            if member in users_to_remind:
+                await member.send("This is your reminder that you are now allowed to ping helpers.")
+            del users_on_timeout[member]
 
 
 def write_data():
@@ -706,6 +747,10 @@ def write_data():
         f.write(json.dumps(var_dict))
         print("Aliases, command prefix, and timeout length saved!")
 
+    with open("stats.json", mode="w") as f:
+        f.write(json.dumps(ping_frequency))
+        print("Ping frequency saved!")
+
 
 def load_data():
     """Reads the ids from the blacklist from the JSON file"""
@@ -713,6 +758,7 @@ def load_data():
     global blacklisted_users
     global helper_roles
     global TIMEOUT_TIME
+    global ping_frequency
 
     with open("aliases.json", mode="r", encoding="UTF-8") as f:
         print("Loading aliases...")
@@ -727,16 +773,30 @@ def load_data():
         else:
             print("Aliases loaded successfully.")
 
-    print("Loading data...")
+    for alias_list in helper_roles.values():
+        alias_list.sort(key=len)
+
+    print("Loading blacklist...")
     with open("blacklist.json", mode="r") as f:
         try:
             blacklisted_users = json.loads(f.read())
 
         except JSONDecodeError:
-            print("Invalid data found.")
+            print("Invalid blacklist found.")
             print("File contents: " + f.read())
         else:
-            print("Data loaded successfully.")
+            print("Blacklist loaded successfully.")
+
+    print("Loading statistics...")
+    with open("stats.json", mode="r") as f:
+        try:
+            ping_frequency = json.loads(f.read())
+
+        except JSONDecodeError:
+            print("Invalid statistics found.")
+            print("File contents: " + f.read())
+        else:
+            print("Statistics loaded successfully.")
 
 
 def convert_ids():
@@ -769,8 +829,7 @@ loop = asyncio.get_event_loop()
 try:
     load_data()
     loop.run_until_complete(main_task())
-except Exception as e:
-    print(e)
+except:
     loop.run_until_complete(bot.logout())
 finally:
     loop.close()

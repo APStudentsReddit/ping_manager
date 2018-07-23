@@ -33,9 +33,11 @@ This was written to allow students to easily ping the AP Helpers while also prev
     * !resetuser |@member|
         * Reset a user's timeout.
     * !addalias
-        * Adds an alias after some selection
+        * Adds an alias after some selection.
     * !removealias
-        * Removes an alias after some selection
+        * Removes an alias after some selection.
+    * !stats
+        * Shows ping frequencies.
         
 Note that there are no pings for Computer Science A, Calculus, or Home Economics Helpers at request of an APStudents mod (those channels are active enough).
     
