@@ -102,7 +102,7 @@ COMMAND_TABLE = \
     |   resetuser <user>   |    Resets user's cooldown  |   Moderator       |
     |   addalias           |    Adds an alias           |   Moderator       |
     |   removealias        |    Removes an alias        |   Moderator       |
-    |   stats              |    DMs ping frequencies    |    Moderator      |
+    |   stats              |    DMs ping frequencies    |   Moderator       |
     |______________________|____________________________|___________________|
     Cooldown Time: {0} minutes
     Current prefix: {1}```"""
@@ -651,7 +651,7 @@ async def resetuser(ctx, member: discord.Member):
     await ctx.message.delete()
 
 
-@bot.command(aliases="prefix")
+@bot.command(aliases=["prefix"])
 async def setprefix(ctx, prefix: str):
     """Changes the prefix of the bot."""
 
