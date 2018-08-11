@@ -11,7 +11,7 @@ You can find our github at https://github.com/APStudentsReddit/ping_manager/
 This was written using discord.py rewrite.
 """
 
-# This bot is only meant to be run on one server, so hardcoding this id seems fine (tell me if it isn't).
+# This bot is only meant to be run on one server, so hardcoding this id seems fine
 GUILD_ID = 467170920155316235     # Currently set to Bot Testing
 KEY_ALIASES = "aliases"
 KEY_PREFIX = "prefix"
@@ -220,7 +220,7 @@ async def help(ctx):
 
     await ctx.author.send(bot.description)
     await ctx.author.send("\n\n" + HELP_MESSAGE.format(bot.command_prefix))
-    await ctx.author.send("\n" + COMMAND_TABLE.format(TIMEOUT_TIME, bot.command_prefix))
+    await ctx.author.send("\n" + COMMAND_TABLE.format(TIMEOUT_TIME // 60, bot.command_prefix))
     await ctx.message.delete()
 
 
@@ -829,7 +829,8 @@ loop = asyncio.get_event_loop()
 try:
     load_data()
     loop.run_until_complete(main_task())
-except:
+except Exception as e:
+    print("\nError: " + str(e) + "\n")
     loop.run_until_complete(bot.logout())
 finally:
     loop.close()
