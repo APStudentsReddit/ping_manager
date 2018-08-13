@@ -85,8 +85,8 @@ _________________________________________________________________________
 |   removealias        |    Removes an alias        |   Moderator       |
 |   stats              |    DM's ping frequencies   |   Moderator       |
 |______________________|____________________________|___________________|
-Cooldown Time: {1} minutes
-Current prefix: {2}```"""
+Cooldown Time: {1} minutes and {2} seconds
+Current prefix: {3}```"""
 
 
 def convert_alias(alias):
@@ -197,7 +197,7 @@ async def on_message(message):
 async def help(ctx):
     """DM's bot description and help for the requester."""
 
-    await ctx.author.send(HELP_MESSAGE.format(DESCRIPTION, TIMEOUT_TIME//60, bot.command_prefix))
+    await ctx.author.send(HELP_MESSAGE.format(DESCRIPTION, TIMEOUT_TIME//60, TIMEOUT_TIME % 60, bot.command_prefix))
     await ctx.message.delete()
 
 
