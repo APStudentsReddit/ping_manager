@@ -12,7 +12,7 @@ This was written using discord.py rewrite.
 """
 
 # This bot is only meant to be run on one server, so hardcoding this id seems fine
-GUILD_ID = 467170920155316235     # Currently set to Bot Testing
+GUILD_ID = 420053499707916288     # Currently set to JJam912's Bot Army
 
 # For the settings file
 KEY_PREFIX = "prefix"
@@ -68,12 +68,12 @@ _________________________________________________________________________
 |   Command            |        Description         |   Access Level    |
 |----------------------+----------------------------+-------------------|
 |   ping <alias>       |    Pings a helper          |   Everyone        |
-|   time               |    Sends cooldown time     |   Everyone        |
-|   remind             |    DMs when can ping       |   Everyone        |
 |   pending <alias>    |    Links to active pings   |   Everyone        |
+|   time               |    Sends cooldown time     |   Everyone        |
+|   remind             |    DM's when can ping      |   Everyone        |
 |----------------------+----------------------------+-------------------|
-|   aliases            |    Shows all aliases       |   Everyone        |
 |   help               |    Shows this              |   Everyone        |
+|   aliases            |    Shows all aliases       |   Everyone        |
 |----------------------+----------------------------+-------------------|
 |   blacklist <@user>  |    Bans user from pinging  |   Moderator       |
 |   unblacklist <@user>|    Unbans user             |   Moderator       |
@@ -83,7 +83,7 @@ _________________________________________________________________________
 |   resetuser <@user>  |    Resets user's cooldown  |   Moderator       |
 |   addalias           |    Adds an alias           |   Moderator       |
 |   removealias        |    Removes an alias        |   Moderator       |
-|   stats              |    DMs ping frequencies    |   Moderator       |
+|   stats              |    DM's ping frequencies   |   Moderator       |
 |______________________|____________________________|___________________|
 Cooldown Time: {1} minutes
 Current prefix: {2}```"""
@@ -186,7 +186,7 @@ async def on_message(message):
         return
 
     if bot.user.mention in message.content:
-        await message.channel.send("My current prefix is {0}".format(bot.command_prefix))
+        await message.channel.send("My current prefix is {0}".format(bot.command_prefix), delete_after=60)
         return
 
     message.content = message.content.lower()
@@ -195,7 +195,7 @@ async def on_message(message):
 
 @bot.command()
 async def help(ctx):
-    """DMs bot description and help for the requester."""
+    """DM's bot description and help for the requester."""
 
     await ctx.author.send(HELP_MESSAGE.format(DESCRIPTION, TIMEOUT_TIME//60, bot.command_prefix))
     await ctx.message.delete()
@@ -203,7 +203,7 @@ async def help(ctx):
 
 @bot.command(aliases=["alias"])
 async def aliases(ctx):
-    """DMs helper aliases to the requester."""
+    """DM's helper aliases to the requester."""
 
     alias_message = "Alias for helpers:" + "\n"  # See alias command
     for subject in helper_roles.keys():
@@ -214,6 +214,7 @@ async def aliases(ctx):
     await ctx.message.delete()
 
 
+@commands.guild_only()
 @bot.command()
 async def ping(ctx, *, alias: str):
     """
@@ -319,8 +320,9 @@ async def ping(ctx, *, alias: str):
     # Member answered Yes
     actual_role = discord.utils.get(ctx.guild.roles, name=helper_role)
     await actual_role.edit(mentionable=True)
-    actual_ping = await ctx.send("Ping requested by {0} for {1}\nReact with ✅ when the problem is solved.".format(
-        ctx.author.mention, actual_role.mention))
+    actual_ping = await ctx.send("Ping requested by {0} for {1}\nReact with ✅ when the problem is solved.\n"
+                                 "Note: Anyone can react with ✅ and it cannot be revoked.".format(
+                                  ctx.author.mention, actual_role.mention))
     await actual_role.edit(mentionable=False)
 
     if not ctx.author.guild_permissions.manage_guild:
@@ -367,7 +369,7 @@ async def time(ctx):
 
 @bot.command(aliases=["notify"])
 async def remind(ctx):
-    """Informs the member that they will be DMed when they are allowed to ping again."""
+    """Informs the member that they will be DM'ed when they are allowed to ping again."""
 
     try:
         _ = users_on_timeout[ctx.author]
@@ -376,11 +378,12 @@ async def remind(ctx):
         return
 
     users_to_remind.append(ctx.author)
-    await ctx.send("{0}, you will receive a DM when you are allowed to ping again.".format(ctx.author.name),
+    await ctx.send("{0}, you will receive a DM's when you are allowed to ping again.".format(ctx.author.name),
                    delete_after=60)
     await ctx.message.delete()
 
 
+@commands.guild_only()
 @bot.command(alieses=["pings"])
 async def pending(ctx, *, alias: str):
     """Prints all links to pending pings."""
@@ -693,6 +696,7 @@ async def setprefix(ctx, prefix: str):
         return
     bot.command_prefix = prefix
     await ctx.send("{0} set the bot prefix set to {1}".format(ctx.author.name, prefix))
+    await bot.change_presence(activity=discord.Game(name="{0}help for commands!".format(bot.command_prefix)))
     await ctx.message.delete()
 
 
@@ -756,7 +760,7 @@ async def on_ready():
     print(bot.user.name)
     print(bot.user.id)
     print('------')
-    await bot.change_presence(activity=discord.Game(name='By ACT Inc. and jjam912'))
+    await bot.change_presence(activity=discord.Game(name="{0}help for commands!".format(bot.command_prefix)))
     bot.loop.create_task(update_timer())
     convert_ids()
 
@@ -871,7 +875,7 @@ def convert_ids():
         member = bot.get_guild(GUILD_ID).get_member(blacklisted_users[i])       # Can be None
         if member:
             blacklisted_users[i] = member
-        # If it is none, we can just keep the id.
+        # If it is None, we can just keep the id.
     else:
         print("Members converted from ids successfully.")
 
