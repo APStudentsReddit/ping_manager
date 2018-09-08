@@ -169,12 +169,6 @@ async def on_message(message):
     Only accepts messages from a specific guild id because it's meant to only run on one server.
     This is hopefully to prevent any manipulation of the blacklist from other servers.
     Also makes commands case insensitive.
-
-    Parameters
-    ----------
-    message : Message
-        Any message sent that the bot can read.
-
     """
 
     if message.guild:
@@ -339,17 +333,17 @@ async def ping(ctx, *, alias: str):
     except KeyError:
         ping_frequency[helper_role] = 1
 
-    def done_check(react, user):
+    def done_check(react, ruser):
         """Determines if someone says the problem is solved."""
 
-        if user == bot.user:
+        if ruser == bot.user:
             return False
 
         if str(react.emoji) == "✅":
             return True
         return False
 
-    # We do not delete the actual ping since that gives people safety of deleting their ping.
+    # We do not delete the actual ping message since that gives people safety of deleting their ping.
     await bot.wait_for("reaction_add", check=done_check)
     del pending_pings[helper_role][pending_pings[helper_role].index(actual_ping)]
 
@@ -427,13 +421,7 @@ async def pending(ctx, *, alias: str):
     await ctx.message.delete()
 
 
-def mod_only(ctx):
-    """Check if member has manage guild permissions"""
-
-    return ctx.author.guild_permissions.manage_guild
-
-
-@commands.check(mod_only)
+@commands.has_permissions(manage_guild=True)
 @bot.command()
 async def blacklist(ctx, member: discord.Member):
     """Adds a member to the blacklist."""
@@ -446,7 +434,7 @@ async def blacklist(ctx, member: discord.Member):
     await ctx.message.delete()
 
 
-@commands.check(mod_only)
+@commands.has_permissions(manage_guild=True)
 @bot.command()
 async def unblacklist(ctx, member: discord.Member):
     """Removes a member from the blacklist."""
@@ -467,7 +455,7 @@ async def unblacklist(ctx, member: discord.Member):
     await ctx.message.delete()
 
 
-@commands.check(mod_only)
+@commands.has_permissions(manage_guild=True)
 @bot.command()
 async def getblacklist(ctx):
     """Sends the blacklist by converting the members to their names."""
@@ -482,7 +470,7 @@ async def getblacklist(ctx):
     await ctx.message.delete()
 
 
-@commands.check(mod_only)
+@commands.has_permissions(manage_guild=True)
 @bot.command()
 async def addalias(ctx):
     """Adds an alias to a helper role after some selections."""
@@ -569,7 +557,7 @@ async def addalias(ctx):
     await new_alias.delete()
 
 
-@commands.check(mod_only)
+@commands.has_permissions(manage_guild=True)
 @bot.command(aliases=["deletealias"])
 async def removealias(ctx):
     """Removes an alias from the helper roles after some selections."""
@@ -672,7 +660,7 @@ async def removealias(ctx):
     await alias_choice.delete()
 
 
-@commands.check(mod_only)
+@commands.has_permissions(manage_guild=True)
 @bot.command(aliases=["reset"])
 async def resetuser(ctx, member: discord.Member):
     """Reset a user's current timeout, allowing them to ping a helper."""
@@ -687,7 +675,7 @@ async def resetuser(ctx, member: discord.Member):
     await ctx.message.delete()
 
 
-@commands.check(mod_only)
+@commands.has_permissions(manage_guild=True)
 @bot.command(aliases=["prefix"])
 async def setprefix(ctx, prefix: str):
     """Changes the prefix of the bot."""
@@ -700,7 +688,7 @@ async def setprefix(ctx, prefix: str):
     await ctx.message.delete()
 
 
-@commands.check(mod_only)
+@commands.has_permissions(manage_guild=True)
 @bot.command(aliases=["settime"])
 async def settimeout(ctx, seconds: int):
     """Set the length of the timeout in seconds."""
@@ -715,7 +703,7 @@ async def settimeout(ctx, seconds: int):
     await ctx.message.delete()
 
 
-@commands.check(mod_only)
+@commands.has_permissions(manage_guild=True)
 @bot.command()
 async def stats(ctx):
     """Prints ping frequency of all helper roles that have been pinged"""
@@ -751,7 +739,6 @@ async def logout(ctx):
     await bot.logout()
 
 
-@commands.check(mod_only)
 @bot.event
 async def on_ready():
     """Prints important bot information and sets up background tasks. Converts ids."""
@@ -761,7 +748,6 @@ async def on_ready():
     print(bot.user.id)
     print('------')
     await bot.change_presence(activity=discord.Game(name="{0}help for commands!".format(bot.command_prefix)))
-    bot.loop.create_task(update_timer())
     convert_ids()
 
 
@@ -882,7 +868,9 @@ def convert_ids():
 
 @asyncio.coroutine
 def main_task():
-    """Login"""
+    """Login and start timer."""
+
+    bot.loop.create_task(update_timer())
     with open("token.txt", mode="r") as f:
         token = f.read()
     yield from bot.login(token)
