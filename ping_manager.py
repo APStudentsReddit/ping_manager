@@ -206,15 +206,21 @@ async def on_command_error(ctx, error):
 
     elif isinstance(error, commands.NoPrivateMessage):
         try:
-            return await ctx.author.send(f'{ctx.command} can not be used in Private Messages.')
+            return await ctx.send(f'{ctx.command} can not be used in Private Messages.', delete_after=30)
+        except:
+            pass
+
+    elif isinstance(error, commands.errors.MissingPermissions):
+        try:
+            return await ctx.send(f'{ctx.command} can not be used because you do not have permission.', delete_after=30)
         except:
             pass
 
     elif isinstance(error, commands.BadArgument):
         if ctx.command.qualified_name == "settimeout":
-            return await ctx.send("Please enter a time in seconds.")
+            return await ctx.send("Please enter a time in seconds.", delete_after=30)
         elif ctx.command.qualified_name in ["blacklist", "unblacklist", "resetuser"]:
-            return await ctx.send("Please enter a valid member.")
+            return await ctx.send("Please enter a valid member.", delete_after=30)
 
     print('Ignoring exception in command {}:'.format(ctx.command), file=sys.stderr)
     traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
@@ -454,8 +460,8 @@ async def pending(ctx, *, alias: str):
     await ctx.message.delete()
 
 
-@commands.guild_only()
 @commands.has_permissions(manage_guild=True)
+@commands.guild_only()
 @bot.command()
 async def blacklist(ctx, member: discord.Member):
     """Adds a member to the blacklist."""
@@ -468,8 +474,8 @@ async def blacklist(ctx, member: discord.Member):
     await ctx.message.delete()
 
 
-@commands.guild_only()
 @commands.has_permissions(manage_guild=True)
+@commands.guild_only()
 @bot.command()
 async def unblacklist(ctx, member: discord.Member):
     """Removes a member from the blacklist."""
@@ -490,8 +496,8 @@ async def unblacklist(ctx, member: discord.Member):
     await ctx.message.delete()
 
 
-@commands.guild_only()
 @commands.has_permissions(manage_guild=True)
+@commands.guild_only()
 @bot.command()
 async def getblacklist(ctx):
     """Sends the blacklist by converting the members to their names."""
@@ -506,8 +512,8 @@ async def getblacklist(ctx):
     await ctx.message.delete()
 
 
-@commands.guild_only()
 @commands.has_permissions(manage_guild=True)
+@commands.guild_only()
 @bot.command()
 async def addalias(ctx):
     """Adds an alias to a helper role after some selections."""
@@ -594,8 +600,8 @@ async def addalias(ctx):
     await new_alias.delete()
 
 
-@commands.guild_only()
 @commands.has_permissions(manage_guild=True)
+@commands.guild_only()
 @bot.command(aliases=["deletealias"])
 async def removealias(ctx):
     """Removes an alias from the helper roles after some selections."""
@@ -698,8 +704,8 @@ async def removealias(ctx):
     await alias_choice.delete()
 
 
-@commands.guild_only()
 @commands.has_permissions(manage_guild=True)
+@commands.guild_only()
 @bot.command(aliases=["reset"])
 async def resetuser(ctx, member: discord.Member):
     """Reset a user's current timeout, allowing them to ping a helper."""
@@ -714,8 +720,8 @@ async def resetuser(ctx, member: discord.Member):
     await ctx.message.delete()
 
 
-@commands.guild_only()
 @commands.has_permissions(manage_guild=True)
+@commands.guild_only()
 @bot.command(aliases=["prefix"])
 async def setprefix(ctx, prefix: str):
     """Changes the prefix of the bot."""
@@ -728,8 +734,8 @@ async def setprefix(ctx, prefix: str):
     await ctx.message.delete()
 
 
-@commands.guild_only()
 @commands.has_permissions(manage_guild=True)
+@commands.guild_only()
 @bot.command(aliases=["settime"])
 async def settimeout(ctx, seconds: int):
     """Set the length of the timeout in seconds."""
@@ -744,8 +750,8 @@ async def settimeout(ctx, seconds: int):
     await ctx.message.delete()
 
 
-@commands.guild_only()
 @commands.has_permissions(manage_guild=True)
+@commands.guild_only()
 @bot.command()
 async def stats(ctx):
     """Prints ping frequency of all helper roles that have been pinged"""
@@ -924,11 +930,9 @@ loop = asyncio.get_event_loop()
 try:
     load_data()
     loop.run_until_complete(main_task())
-except Exception as e:
-    print("")
-    print(e)
-    print("")
+except Exception:
     loop.run_until_complete(bot.logout())
+    raise
 finally:
     loop.close()
     write_data()
