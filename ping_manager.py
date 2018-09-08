@@ -3,6 +3,8 @@ import asyncio
 from discord.ext import commands
 import json
 from json.decoder import JSONDecodeError
+import sys
+import traceback
 
 
 DESCRIPTION = """This bot is used to ping helpers while also preventing spamming of pings in the APStudents discord.
@@ -185,6 +187,37 @@ async def on_message(message):
 
     message.content = message.content.lower()
     await bot.process_commands(message)
+
+
+@bot.event
+async def on_command_error(ctx, error):
+    """The event triggered when an error is raised while invoking a command.
+    ctx   : Context
+    error : Exception"""
+
+    if hasattr(ctx.command, 'on_error'):
+        return
+
+    ignored = (commands.CommandNotFound, commands.UserInputError)
+    error = getattr(error, 'original', error)
+
+    if isinstance(error, ignored):
+        return
+
+    elif isinstance(error, commands.NoPrivateMessage):
+        try:
+            return await ctx.author.send(f'{ctx.command} can not be used in Private Messages.')
+        except:
+            pass
+
+    elif isinstance(error, commands.BadArgument):
+        if ctx.command.qualified_name == "settimeout":
+            return await ctx.send("Please enter a time in seconds.")
+        elif ctx.command.qualified_name in ["blacklist", "unblacklist", "resetuser"]:
+            return await ctx.send("Please enter a valid member.")
+
+    print('Ignoring exception in command {}:'.format(ctx.command), file=sys.stderr)
+    traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
 
 
 @bot.command()
