@@ -206,24 +206,33 @@ async def on_command_error(ctx, error):
 
     elif isinstance(error, commands.NoPrivateMessage):
         try:
-            return await ctx.send(f'{ctx.command} can not be used in Private Messages.', delete_after=30)
+            return await ctx.send("{0}, {1} can not be used in Private Messages.".format(
+                ctx.author.name, ctx.command), delete_after=60)
         except:
             pass
 
     elif isinstance(error, commands.MissingPermissions):
         try:
-            return await ctx.send(f'{ctx.command} can not be used because you do not have permission.', delete_after=30)
+            return await ctx.send("{0}, {1} can not be used because you do not have permission.".format(
+                ctx.author.name, ctx.command), delete_after=60)
         except:
             pass
 
     elif isinstance(error, commands.BadArgument):
         if ctx.command.qualified_name == "settimeout":
-            return await ctx.send("Please enter a time in seconds.", delete_after=30)
+            return await ctx.send("Please enter a time in seconds.", delete_after=60)
         elif ctx.command.qualified_name in ["blacklist", "unblacklist", "resetuser"]:
-            return await ctx.send("Please enter a valid member.", delete_after=30)
+            return await ctx.send("Please enter a valid member.", delete_after=60)
 
     print('Ignoring exception in command {}:'.format(ctx.command), file=sys.stderr)
     traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
+
+    for _ in range(60):
+        await asyncio.sleep(1)
+    try:
+        await ctx.message.delete()
+    except discord.Forbidden:
+        pass
 
 
 @bot.command()
