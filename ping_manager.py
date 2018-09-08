@@ -198,7 +198,7 @@ async def on_command_error(ctx, error):
     if hasattr(ctx.command, 'on_error'):
         return
 
-    ignored = (commands.CommandNotFound, commands.UserInputError)
+    ignored = (commands.CommandNotFound, commands.UserInputError, discord.Forbidden)
     error = getattr(error, 'original', error)
 
     if isinstance(error, ignored):
@@ -210,7 +210,7 @@ async def on_command_error(ctx, error):
         except:
             pass
 
-    elif isinstance(error, commands.errors.MissingPermissions):
+    elif isinstance(error, commands.MissingPermissions):
         try:
             return await ctx.send(f'{ctx.command} can not be used because you do not have permission.', delete_after=30)
         except:
