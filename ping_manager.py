@@ -454,6 +454,7 @@ async def pending(ctx, *, alias: str):
     await ctx.message.delete()
 
 
+@commands.guild_only()
 @commands.has_permissions(manage_guild=True)
 @bot.command()
 async def blacklist(ctx, member: discord.Member):
@@ -467,6 +468,7 @@ async def blacklist(ctx, member: discord.Member):
     await ctx.message.delete()
 
 
+@commands.guild_only()
 @commands.has_permissions(manage_guild=True)
 @bot.command()
 async def unblacklist(ctx, member: discord.Member):
@@ -488,6 +490,7 @@ async def unblacklist(ctx, member: discord.Member):
     await ctx.message.delete()
 
 
+@commands.guild_only()
 @commands.has_permissions(manage_guild=True)
 @bot.command()
 async def getblacklist(ctx):
@@ -503,6 +506,7 @@ async def getblacklist(ctx):
     await ctx.message.delete()
 
 
+@commands.guild_only()
 @commands.has_permissions(manage_guild=True)
 @bot.command()
 async def addalias(ctx):
@@ -590,6 +594,7 @@ async def addalias(ctx):
     await new_alias.delete()
 
 
+@commands.guild_only()
 @commands.has_permissions(manage_guild=True)
 @bot.command(aliases=["deletealias"])
 async def removealias(ctx):
@@ -693,6 +698,7 @@ async def removealias(ctx):
     await alias_choice.delete()
 
 
+@commands.guild_only()
 @commands.has_permissions(manage_guild=True)
 @bot.command(aliases=["reset"])
 async def resetuser(ctx, member: discord.Member):
@@ -708,6 +714,7 @@ async def resetuser(ctx, member: discord.Member):
     await ctx.message.delete()
 
 
+@commands.guild_only()
 @commands.has_permissions(manage_guild=True)
 @bot.command(aliases=["prefix"])
 async def setprefix(ctx, prefix: str):
@@ -721,6 +728,7 @@ async def setprefix(ctx, prefix: str):
     await ctx.message.delete()
 
 
+@commands.guild_only()
 @commands.has_permissions(manage_guild=True)
 @bot.command(aliases=["settime"])
 async def settimeout(ctx, seconds: int):
@@ -736,6 +744,7 @@ async def settimeout(ctx, seconds: int):
     await ctx.message.delete()
 
 
+@commands.guild_only()
 @commands.has_permissions(manage_guild=True)
 @bot.command()
 async def stats(ctx):
