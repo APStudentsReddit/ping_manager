@@ -849,7 +849,8 @@ async def stats(ctx):
     stats_message = "Percentages of pings out of {0} pings\n\n".format(total_pings)
     for role in roles:
         stats_message += "{0:<34}: ".format(role)
-        stats_message += ("{:04." + str(len(str(total_pings)) + 1) + "f}\n").format(ping_frequency[role] / total_pings)
+        stats_message += ("{:04." + str(len(str(total_pings)) + 1) + "f}\n").format(
+            ping_frequency[role] / total_pings * 100)
 
     stats_message += "\nTotal number of pings out of {0} pings\n\n".format(total_pings)
     for role in roles:
