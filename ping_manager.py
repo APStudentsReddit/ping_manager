@@ -191,48 +191,93 @@ async def on_message(message):
 
 @bot.event
 async def on_command_error(ctx, error):
-    """The event triggered when an error is raised while invoking a command.
-    ctx   : Context
-    error : Exception"""
+    """Responds when some command error is made"""
 
     if hasattr(ctx.command, 'on_error'):
         return
-
-    ignored = (commands.CommandNotFound, commands.UserInputError, discord.Forbidden)
+    #                                    These two are commonly triggered by trying to delete messages.
+    ignored = (commands.CommandNotFound, discord.Forbidden, discord.NotFound)
     error = getattr(error, 'original', error)
 
     if isinstance(error, ignored):
         return
 
     elif isinstance(error, commands.NoPrivateMessage):
-        try:
-            return await ctx.send("{0}, {1} can not be used in Private Messages.".format(
-                ctx.author.name, ctx.command), delete_after=60)
-        except:
-            pass
+        return await ctx.send("{0}, {1} can not be used in Private Messages.".format(
+            ctx.author.name, ctx.command), delete_after=60)
 
     elif isinstance(error, commands.MissingPermissions):
+        await ctx.send("{0}, {1} can not be used because you do not have permission.".format(
+            ctx.author.name, ctx.command), delete_after=60)
+        for _ in range(60):
+            await asyncio.sleep(1)
         try:
-            return await ctx.send("{0}, {1} can not be used because you do not have permission.".format(
-                ctx.author.name, ctx.command), delete_after=60)
-        except:
+            await ctx.message.delete()
+        except discord.Forbidden:
             pass
+        return
+
+    elif isinstance(error, commands.MissingRequiredArgument):
+        if ctx.command.qualified_name in ["ping", "pending"]:
+            await ctx.send("{0}, please enter a valid alias. You can find aliases with {1}alias.".format(
+                ctx.author.name, bot.command_prefix), delete_after=60)
+            for _ in range(60):
+                await asyncio.sleep(1)
+            try:
+                await ctx.message.delete()
+            except discord.Forbidden:
+                pass
+            return
+        elif ctx.command.qualified_name == "settimeout":
+            await ctx.send("{0}, please include a time in seconds.".format(ctx.author.name), delete_after=60)
+            for _ in range(60):
+                await asyncio.sleep(1)
+            try:
+                await ctx.message.delete()
+            except discord.Forbidden:
+                pass
+            return
+        elif ctx.command.qualified_name == "setprefix":
+            await ctx.send("{0}, please include a prefix to set.".format(ctx.author.name), delete_after=60)
+            for _ in range(60):
+                await asyncio.sleep(1)
+            try:
+                await ctx.message.delete()
+            except discord.Forbidden:
+                pass
+            return
+        elif ctx.command.qualified_name in ["blacklist", "unblacklist", "resetuser"]:
+            await ctx.send("{0}, please include a valid member name. ".format(ctx.author.name), delete_after=60)
+            for _ in range(60):
+                await asyncio.sleep(1)
+            try:
+                await ctx.message.delete()
+            except discord.Forbidden:
+                pass
+            return
 
     elif isinstance(error, commands.BadArgument):
         if ctx.command.qualified_name == "settimeout":
-            return await ctx.send("Please enter a time in seconds.", delete_after=60)
+            await ctx.send("{0}, please enter a time in seconds.".format(ctx.author.name), delete_after=60)
+            for _ in range(60):
+                await asyncio.sleep(1)
+            try:
+                await ctx.message.delete()
+            except discord.Forbidden:
+                pass
+            return
         elif ctx.command.qualified_name in ["blacklist", "unblacklist", "resetuser"]:
-            return await ctx.send("Please enter a valid member.", delete_after=60)
+            await ctx.send("{0}, please enter a valid member.".format(ctx.author.name), delete_after=60)
+            for _ in range(60):
+                await asyncio.sleep(1)
+            try:
+                await ctx.message.delete()
+            except discord.Forbidden:
+                pass
+            return
 
     print('Ignoring exception in command {}:'.format(ctx.command), file=sys.stderr)
     traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
-
-    for _ in range(60):
-        await asyncio.sleep(1)
-    try:
-        await ctx.message.delete()
-    except discord.Forbidden:
-        pass
 
 
 @bot.command()
@@ -345,13 +390,14 @@ async def ping(ctx, *, alias: str):
     try:
         reaction, user = await bot.wait_for('reaction_add', timeout=30, check=ping_check)
     except asyncio.TimeoutError:
+        del users_on_confirmation[users_on_confirmation.index(ctx.author)]
         await ctx.send("Timed out!", delete_after=5)
         await confirm_ping.delete()
         await ctx.message.delete()
-        del users_on_confirmation[users_on_confirmation.index(ctx.author)]
         return
 
     if str(reaction.emoji) == "❌":
+        del users_on_confirmation[users_on_confirmation.index(ctx.author)]
         await ctx.send("Canceling request...", delete_after=5)
         await confirm_ping.delete()
         await ctx.message.delete()
@@ -527,11 +573,18 @@ async def getblacklist(ctx):
 async def addalias(ctx):
     """Adds an alias to a helper role after some selections."""
 
+    if ctx.author in users_on_confirmation:
+        await ctx.send("{0}, please confirm or cancel your current request before trying again.".format(
+            ctx.author.name), delete_after=30)
+        await ctx.message.delete()
+        return
+
     helper_message = "Please choose the number of the helper role you want to add to:\n" \
                      "To cancel, type 'cancel'\n\n"
     for i, alias in enumerate(helper_roles.keys()):
         helper_message += "{0}: {1}\n".format(i+1, alias)
 
+    users_on_confirmation.append(ctx.author)
     helper_prompt = await ctx.send(helper_message)
     cancels = ["exit", "cancel", "quit", "stop"]
 
@@ -551,6 +604,7 @@ async def addalias(ctx):
     try:
         helper_choice = await bot.wait_for("message", check=helper_check, timeout=60)
     except asyncio.TimeoutError:
+        del users_on_confirmation[users_on_confirmation.index(ctx.author)]
         await ctx.send("Timed out!", delete_after=10)
         await ctx.message.delete()
         await helper_prompt.delete()
@@ -559,6 +613,7 @@ async def addalias(ctx):
     try:
         helper_number = int(helper_choice.content) - 1
     except ValueError:
+        del users_on_confirmation[users_on_confirmation.index(ctx.author)]
         await ctx.send("Canceling request...", delete_after=10)
         await ctx.message.delete()
         await helper_prompt.delete()
@@ -578,6 +633,7 @@ async def addalias(ctx):
     try:
         new_alias = await bot.wait_for('message', check=author_check, timeout=60)
     except asyncio.TimeoutError:
+        del users_on_confirmation[users_on_confirmation.index(ctx.author)]
         await ctx.send("Timed out!", delete_after=5)
         await ctx.message.delete()
         await helper_prompt.delete()
@@ -586,6 +642,7 @@ async def addalias(ctx):
         return
 
     if new_alias.content in cancels:
+        del users_on_confirmation[users_on_confirmation.index(ctx.author)]
         await ctx.send("Canceling request...", delete_after=5)
         await ctx.message.delete()
         await helper_prompt.delete()
@@ -594,6 +651,7 @@ async def addalias(ctx):
         await new_alias.delete()
         return
 
+    del users_on_confirmation[users_on_confirmation.index(ctx.author)]
     if new_alias.content.lower() not in helper_roles[helper_name]:
         helper_roles[helper_name].append(new_alias.content.lower())
         await ctx.send("The alias {0} has been added to the {1} Helper aliases by {2}.".format(
@@ -615,11 +673,18 @@ async def addalias(ctx):
 async def removealias(ctx):
     """Removes an alias from the helper roles after some selections."""
 
+    if ctx.author in users_on_confirmation:
+        await ctx.send("{0}, please confirm or cancel your current request before trying again.".format(
+            ctx.author.name), delete_after=30)
+        await ctx.message.delete()
+        return
+
     helper_message = "Please choose the number of the helper role you want to remove from:\n" \
                      "To cancel, type 'cancel'\n\n"
     for i, alias in enumerate(helper_roles.keys()):
         helper_message += "{0}: {1}\n".format(i + 1, alias)
 
+    users_on_confirmation.append(ctx.author)
     helper_prompt = await ctx.send(helper_message)
     cancels = ["exit", "cancel", "quit", "stop"]
 
@@ -639,6 +704,7 @@ async def removealias(ctx):
     try:
         helper_choice = await bot.wait_for("message", check=helper_check, timeout=60)
     except asyncio.TimeoutError:
+        del users_on_confirmation[users_on_confirmation.index(ctx.author)]
         await ctx.send("Timed out!", delete_after=5)
         await ctx.message.delete()
         await helper_prompt.delete()
@@ -647,6 +713,7 @@ async def removealias(ctx):
     try:
         helper_number = int(helper_choice.content) - 1
     except ValueError:
+        del users_on_confirmation[users_on_confirmation.index(ctx.author)]
         await ctx.send("Canceling request...", delete_after=5)
         await ctx.message.delete()
         await helper_prompt.delete()
@@ -678,6 +745,7 @@ async def removealias(ctx):
     try:
         alias_choice = await bot.wait_for('message', check=alias_check, timeout=60)
     except asyncio.TimeoutError:
+        del users_on_confirmation[users_on_confirmation.index(ctx.author)]
         await ctx.send("Timed out!", delete_after=5)
         await ctx.message.delete()
         await helper_prompt.delete()
@@ -688,6 +756,7 @@ async def removealias(ctx):
     try:
         alias_number = int(alias_choice.content) - 1
     except ValueError:
+        del users_on_confirmation[users_on_confirmation.index(ctx.author)]
         await ctx.send("Canceling request...", delete_after=5)
         await ctx.message.delete()
         await helper_prompt.delete()
@@ -698,6 +767,7 @@ async def removealias(ctx):
 
     alias_name = helper_roles[helper_name][alias_number]
 
+    del users_on_confirmation[users_on_confirmation.index(ctx.author)]
     if alias_name in helper_roles[helper_name]:
         del helper_roles[helper_name][alias_number]
         await ctx.send("The alias {0} has been removed from the {1} Helper aliases by {2}.".format(
@@ -726,6 +796,10 @@ async def resetuser(ctx, member: discord.Member):
         await ctx.send("{0} can now ping a helper (reset by {1}).".format(member.name, ctx.author.name))
     else:
         await ctx.send("{0} can already ping helpers (reset by {1}).".format(member.name, ctx.author.name))
+    if member in users_to_remind:           # The ping should be sufficient.
+        del users_to_remind[users_to_remind.index(member)]
+    if member in users_on_confirmation:     # Just in case.
+        del users_on_confirmation[users_to_remind.index(member)]
     await ctx.message.delete()
 
 
