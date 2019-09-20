@@ -48,6 +48,6 @@ To use these commands, the user must have the Manage Guilds permission.
         
 Note that there are no pings for Computer Science A, Calculus, or Home Economics Helpers at request of an APStudents mod (those channels are active enough).
     
-This bot was written by [@jjam912#2180](https://github.com/jjam912) and [@ACT Inc.#2590](https://github.com/ikhaliq15).
+This bot was written by [@JJamesWWang#2180](https://github.com/JJamesWWang) and [@ACT Inc.#2590](https://github.com/ikhaliq15).
 
 Contact us for any suggestions for the bot or use GitHub's Issues page.
